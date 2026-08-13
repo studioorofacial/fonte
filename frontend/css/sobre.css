@@ -1,0 +1,219 @@
+/* ===== ESTILOS PARA PÁGINA SOBRE ===== */
+
+.sobre-container {
+    max-width: 1400px;
+    margin: 0 auto 80px;
+    padding: 0 20px;
+}
+
+.sobre-card {
+    background-color: white;
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(88, 30, 95, 0.1);
+    border: 1px solid rgba(88, 30, 95, 0.1);
+}
+
+.sobre-card h2 {
+    color: #581E5F;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #c1994c;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sobre-content p {
+    margin-bottom: 20px;
+    line-height: 1.6;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.sobre-img-container {
+    margin: 30px 0;
+    text-align: center;
+}
+
+.sobre-imagem {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border: 3px solid #581E5F;
+}
+
+/* Missão, Visão e Valores */
+.mvv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.mvv-item {
+    text-align: center;
+    padding: 25px;
+    background: linear-gradient(135deg, #f9f5fa 0%, #ffffff 100%);
+    border-radius: 10px;
+    border: 2px solid rgba(88, 30, 95, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.mvv-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(88, 30, 95, 0.15);
+}
+
+.mvv-icon {
+    font-size: 2.5rem;
+    color: #581E5F;
+    margin-bottom: 15px;
+}
+
+.mvv-item h3 {
+    color: #581E5F;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.mvv-item p {
+    color: #666;
+    line-height: 1.5;
+}
+
+/* Equipe */
+.equipe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.equipe-item {
+    text-align: center;
+    padding: 20px;
+    background-color: #f8f5f9;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.equipe-item:hover {
+    background-color: #f0eaf2;
+    transform: scale(1.02);
+}
+
+.equipe-img {
+    font-size: 4rem;
+    color: #581E5F;
+    margin-bottom: 15px;
+}
+
+.equipe-item h3 {
+    color: #581E5F;
+    margin-bottom: 5px;
+    font-size: 1.2rem;
+}
+
+.equipe-cargo {
+    color: #c1994c;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+.equipe-desc {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Diferenciais */
+.diferenciais-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.diferencial-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background-color: #f8f5f9;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.diferencial-item:hover {
+    background-color: #f0eaf2;
+}
+
+.diferencial-item i {
+    color: #c1994c;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.diferencial-item span {
+    color: #333;
+    font-weight: 500;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .sobre-container {
+        padding: 0 15px;
+        margin-bottom: 60px;
+    }
+    
+    .sobre-card {
+        padding: 20px;
+    }
+    
+    .mvv-grid,
+    .equipe-grid,
+    .diferenciais-list {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .equipe-item {
+        padding: 15px;
+    }
+    
+    .sobre-content p {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .sobre-card {
+        padding: 15px;
+    }
+    
+    .sobre-card h2 {
+        font-size: 1.5rem;
+    }
+    
+    .mvv-item,
+    .equipe-item {
+        padding: 15px;
+    }
+    
+    .mvv-icon {
+        font-size: 2rem;
+    }
+    
+    .equipe-img {
+        font-size: 3rem;
+    }
+}
+
+/* REMOVER ou COMENTAR as definições antigas */
+.homeup {
+    display: none; /* Esconde a classe antiga */
+}

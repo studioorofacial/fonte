@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="img/novo/clinica.ico" type="image/x-icon">
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <title>Studio Orofacial - Contato</title>
+</head>
+
+<body>
+    <!-- Header Fixo -->
+    <header class="header">
+        <div>
+            <a href="index.html" class="logo">
+                <img src="img/novo/logo1_fd.png" alt="Logo marca Orofacial.">
+                <img src="img/home/studio_ajustado.png" alt="Imagem do logo com nome Studio Orofacial.">
+            </a>
+        </div>
+        <nav class="menu">
+            <a href="index.html">Home</a>
+            <a href="catalogo.html">Catálogo</a>
+            <a href="contato.html">Contato</a>
+            <a href="sobre.html">Sobre</a>
+            <a href="login.html">Login</a>
+        </nav>
+    </header>
+    
+    <!-- Conteúdo Principal -->
+    <main class="main">
+        <!-- Título da página -->
+        <div class="page-title">
+            <h1>Entre em Contato</h1>
+            <p>Responderemos o mais breve possível</p>
+        </div>
+        
+        <div class="contact-container">
+            <section class="homeleft">
+                <!-- Formulário de Contato -->
+                <div class="contact-form">
+                    <h2><i class="bi bi-envelope"></i> Envie sua Mensagem</h2>
+                    <form id="contactForm">
+                        <div class="form-group">
+                            <label for="nome">Nome Completo *</label>
+                            <input type="text" id="nome" name="nome" required placeholder="Digite seu nome completo">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">E-mail *</label>
+                            <input type="email" id="email" name="email" required placeholder="seu@email.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="mensagem">Mensagem *</label>
+                            <textarea id="mensagem" name="mensagem" rows="5" required placeholder="Digite sua mensagem aqui..."></textarea>
+                        </div>
+                        
+                        <div class="form-buttons">
+                            <button type="submit" class="btn-submit">
+                                <i class="bi bi-send"></i> Enviar Mensagem
+                            </button>
+                            <button type="button" class="btn-clear" onclick="limparFormulario()">
+                                <i class="bi bi-eraser"></i> Limpar Campos
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="contact-info">
+                        <h3><i class="bi bi-info-circle"></i> Outras formas de contato:</h3>
+                        <p><i class="bi bi-telephone"></i> Telefone: (11) 4515-0556</p>
+                        <p><i class="bi bi-whatsapp"></i> WhatsApp: (11) 97199-3704</p>
+                        <p><i class="bi bi-clock"></i> Horário de atendimento: 9h às 18h</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="homeright">
+                <!-- Mapa do Google -->
+                <div class="map-container">
+                    <h2><i class="bi bi-geo-alt"></i> Nossa Localização</h2>
+                    
+                    <div class="map-frame">
+                        <!-- Link do Google Maps -->
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3654.18726362023!2d-46.45805368933215!3d-23.66926027863704!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce695c580ed997%3A0x842bc9b00983116d!2sR.%20%C3%81lvares%20Machado%2C%20281%20-%20Vila%20Bocaina%2C%20Mau%C3%A1%20-%20SP%2C%2009310-020!5e0!3m2!1spt-BR!2sbr!4v1764684614849!5m2!1spt-BR!2sbr" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                    
+                    <div class="address-info">
+                        <h3><i class="bi bi-building"></i> Endereço</h3>
+                        <p>Ed. Jurerê internacional, 4º andar, sala 406</p>
+                        <p>Rua Álvares Machado, 281</p>
+                        <p>Vila Bocaina, Mauá - SP, 09310-020</p>
+                        
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>Desenvolvido por Grupo 5</p>
+    </footer>
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>
