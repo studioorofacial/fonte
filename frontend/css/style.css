@@ -1,0 +1,531 @@
+/* MANTENHA o reset inicial */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #f4f4f4;
+    /* padding-top: 80px; ESPAÇO para o header fixo */
+}
+
+.header {
+    display: flex;
+    position: sticky; /* Relative antes de rolar */
+    top: 0;
+    left: 0;
+    justify-content: space-between; /* Isso já coloca logo à esquerda e menu à direita */
+    align-items: center;
+    background-color: rgb(68, 20, 75);
+    color: white;
+    padding: 15px 20px;
+    width: 100%;
+    z-index: 1000;
+    flex-wrap: nowrap; /* Impede quebra em mobile */
+}
+
+.main {
+    padding-bottom: 40px;
+}
+
+.logo {
+    width: 300px;
+    flex-shrink: 0; /* Impede que a logo encolha demais */
+    display: flex;          /* coloca as imagens lado a lado */
+    align-items: center;    /* alinha verticalmente */
+    gap: 8px;               /* espaço entre as imagens (opcional) */
+    margin-left: 60px; /* distância do canto esquerdo */
+}
+
+.logo img {
+    max-width: 100%; /* Ajustado para usar toda largura disponível no container .logo */
+    height: auto;
+    display: inline-block; /* evita quebra de linha */
+    max-height: 60px; /* Controla altura máxima */
+    
+}
+
+.menu {
+    display: flex;
+    flex-wrap: nowrap; /* Mantém links na mesma linha */
+}
+
+.menu > a {
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    padding: 12px 20px;
+    white-space: nowrap; /* Impede quebra de texto nos links */
+    transition: background-color 0.3s ease;
+}
+
+.menu > a:hover {
+    background-color: #c1994c;
+    color: rgb(68, 20, 75);
+}
+
+.homeup {
+    width: 100%;
+    margin-top: 0; /* Começa logo após o header */
+}
+
+/* Container do carousel ocupando largura total */
+.container_carousel {
+    width: 100%;
+    padding: 0; /* Remove padding se existir */
+    margin: 0;
+}
+
+/* Se quiser o carousel mais alto, ajuste: */
+.carousel, .carousel-inner, .carousel-item {
+    width: 100%;
+}
+
+/* Garantir que imagens ocupem toda largura */
+.carousel-item img {
+    width: 100%;
+    height: 500px; /* Ajuste a altura desejada */
+    object-fit: cover; /* Mantém proporção e cobre área */
+}
+
+/* Seções laterais */
+.homeleft, .homeright {
+    padding: 20px;
+}
+
+.footer {
+    position: sticky; /* Relative antes de rolar */
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgb(68, 20, 75);
+    color: white;
+    text-align: center;
+    padding: 15px;
+    z-index: 999; /* Abaixo do header */
+}
+
+
+/* MEDIA QUERY */
+@media (max-width: 860px) {
+    .header {
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between; /* mantém o menu à direita */
+        align-items: center;
+    }
+
+    /* QUADRO DA LOGO */
+    .logo {
+        width: auto;
+        display: flex;
+        flex-direction: column; /* imagens uma em cima da outra */
+        align-items: center;    /* centraliza dentro do quadro */
+        justify-content: center;
+        padding: 8px;
+        gap: 5px;
+        margin-left: 0;
+        background-color: transparent; /* se quiser um quadro real, mude aqui */
+        margin-left: 60px; /* distância do canto esquerdo */
+    }
+
+    .logo img {
+        max-width: 120px; /* tamanho ideal no mobile */
+        max-height: 50px;
+        height: auto;
+    }
+
+    /* MENU CONTINUA À DIREITA */
+    .menu {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-left: auto; /* empurra para o lado direito */
+    }
+
+    .menu > a {
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+
+}
+
+@media (max-width: 610px) {
+        .logo {
+        width: auto;
+        display: flex;
+        flex-direction: column; /* imagens uma em cima da outra */
+        align-items: center;    /* centraliza dentro do quadro */
+        justify-content: center;
+        padding: 8px;
+        gap: 5px;
+        margin-left: 0;
+        background-color: transparent; /* se quiser um quadro real, mude aqui */
+    }
+}
+
+/* PARA TELAS MUITO PEQUENAS */
+@media (max-width: 480px) {
+    .header {
+        padding: 8px 10px;
+    }
+    
+    .logo {
+        width: 140px;
+    }
+    
+    .logo img {
+        max-height: 40px;
+    }
+    
+    .menu > a {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+}
+
+/* ------------------------------------------------------------------------------------ */
+
+.page-title {
+    text-align: center;
+    padding: 30px 20px;
+    background: linear-gradient(135deg, #581E5F 0%, #7a2b82 100%);
+    color: white;
+    margin-bottom: 40px;
+    border-bottom: 5px solid #c1994c;
+}
+
+.page-title h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.page-title p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.contact-container, .catalogo-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    padding: 0 20px;
+    max-width: 1400px;
+    margin: 0 auto 80px;
+    text-align: justify;
+}
+
+.home-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    padding: 0 20px;
+    max-width: 1400px;
+    margin: 30px auto 30px;
+    font-size:x-large;
+}
+
+.homebox-text {
+    flex: 1;
+    text-align: justify;
+}
+
+.homebox-img img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+}
+
+.homebox {
+    display: flex;              /* coloca lado a lado */
+    align-items: center;        /* alinha verticalmente */
+    justify-content: space-between; /* distribui espaço */
+    gap: 30px;                  /* espaço entre texto e imagem */
+    padding: 20px;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(88, 30, 95, 0.1);
+    border: 1px solid rgba(88, 30, 95, 0.1);
+}
+
+/* Estilos para as seções */
+.homeleft, .homeright {
+    flex: 1;
+    min-width: 300px;
+    padding: 25px;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(88, 30, 95, 0.1);
+    border: 1px solid rgba(88, 30, 95, 0.1);
+}
+
+.catalogo-form h2 {
+    color: #581E5F;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #c1994c;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* FORMULÁRIO DE CONTATO */
+.contact-form h2 {
+    color: #581E5F;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #c1994c;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #581E5F;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background-color: #f9f9f9;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #581E5F;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(88, 30, 95, 0.1);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #999;
+}
+
+/* BOTÕES DO FORMULÁRIO */
+.form-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.btn-submit,
+.btn-clear {
+    flex: 1;
+    min-width: 150px;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-submit {
+    background-color: #581E5F;
+    color: white;
+}
+
+.btn-submit:hover {
+    background-color: #4a1a50;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(88, 30, 95, 0.3);
+}
+
+.btn-clear {
+    background-color: #c1994c;
+    color: #581E5F;
+}
+
+.btn-clear:hover {
+    background-color: #eade98;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+}
+
+/* INFORMAÇÕES DE CONTATO */
+.contact-info {
+    margin-top: 40px;
+    padding: 20px;
+    background-color: #f8f5f9;
+    border-radius: 10px;
+    border-left: 4px solid #c1994c;
+}
+
+.contact-info h3 {
+    color: #581E5F;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.contact-info p {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #333;
+}
+
+/* MAPA */
+.map-container h2 {
+    color: #581E5F;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #c1994c;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.map-frame {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 25px;
+    border: 3px solid #581E5F;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* INFORMAÇÕES DO ENDEREÇO */
+.address-info {
+    padding: 20px;
+    background-color: #f8f5f9;
+    border-radius: 10px;
+}
+
+.address-info h3 {
+    color: #581E5F;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.address-info p {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.transport-options {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px dashed #ddd;
+}
+
+.transport-options h4 {
+    color: #581E5F;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.transport-options ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.transport-options li {
+    padding: 5px 0;
+    padding-left: 25px;
+    position: relative;
+    color: #333;
+}
+
+.transport-options li:before {
+    content: "→";
+    color: #c1994c;
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+/* ÍCONES */
+.bi {
+    font-size: 1.2em;
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 992px) {
+    .contact-container, .catalogo-container {
+        flex-direction: column;
+    }
+    
+    .homeleft, .homeright {
+        width: 100%;
+    }
+    
+    .form-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-submit,
+    .btn-clear {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-title h1 {
+        font-size: 2rem;
+    }
+    
+    .contact-container, .catalogo-container {
+        padding: 0 15px;
+    }
+    
+    .homeleft, .homeright {
+        padding: 20px;
+    }
+    
+    .map-frame iframe {
+        height: 350px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        padding: 20px 15px;
+    }
+    
+    .map-frame iframe {
+        height: 300px;
+    }
+}
+
+/* 🔻 Quando a tela ficar pequena (tablet/celular) */
+@media (max-width: 768px) {
+    .homebox {
+        flex-direction: column;      /* coloca um abaixo do outro */
+        text-align: center;          /* centraliza o texto */
+    }
+
+    .homebox-img img {
+        margin-top: 20px;            /* separação do texto */
+    }
+}
