@@ -13,7 +13,7 @@
 <style>
 /* ============================================================
    PALETA STUDIO OROFACIAL
-   Roxo escuro : #581E5F  (header, botões primários, títulos)
+   Roxo escuro : #44144b  (header, botões primários, títulos)
    Roxo médio  : #612168  (variante)
    Dourado     : #c1994c  (acentos, hover, bordas destaque)
    Dourado claro: #eade98 (hover claro)
@@ -23,7 +23,7 @@
    Texto       : #333
 ============================================================ */
 :root {
-  --roxo:        #581E5F;
+  --roxo:        #44144b;
   --roxo-med:    #612168;
   --roxo-dark:   #4a1a50;
   --roxo-pale:   #f8f5f9;
@@ -102,17 +102,17 @@ body { font-family: Arial, Helvetica, sans-serif; background-color: var(--fundo)
 .page-title {
   text-align: center;
   padding: 30px 20px;
-  background: linear-gradient(135deg, #581E5F 0%, #7a2b82 100%);
+  background: linear-gradient(135deg, #44144b 0%, #7a2b82 100%);
   color: white;
   margin-bottom: 32px;
   border-bottom: 5px solid var(--dourado);
 }
 .page-title h1 {
-  font-size: 2rem;
-  margin-bottom: 8px;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
-.page-title p { font-size: 1rem; opacity: .9; margin: 0; }
+.page-title p { font-size: 1.1rem; opacity: .9; margin: 0; }
 
 /* ============================================================
    LOGIN SCREEN
@@ -541,17 +541,18 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 
   <!-- HEADER igual ao site -->
   <div class="header">
-    <div class="logo">
-      <img src="https://studioorofacial.github.io/img/novo/logo1_fd.png" alt="Logo Orofacial">
-      <img src="https://studioorofacial.github.io/img/home/studio_ajustado.png" alt="Studio Orofacial">
+    <div>
+        <a href="index.html" class="logo">
+            <img src="img/novo/logo1_fd.png" alt="Logo marca Orofacial.">
+            <img src="img/home/studio_ajustado.png" alt="Imagem do logo com nome Studio Orofacial.">
+        </a>
     </div>
-    <div class="menu">
-      <a href="https://studioorofacial.github.io/index.html">Home</a>
-      <a href="https://studioorofacial.github.io/sobre.html">Sobre</a>
-      <a href="https://studioorofacial.github.io/catalogo.html">Catálogo</a>
-      <a href="https://studioorofacial.github.io/contato.html">Contato</a>
-      <a href="#" class="active">Login</a>
-    </div>
+    <nav class="menu">
+        <a href="index.html">Home</a>
+        <a href="catalogo.html">Catálogo</a>
+        <a href="contato.html">Contato</a>
+        <a href="sobre.html">Sobre</a>
+    </nav>
   </div>
 
   <!-- BANNER -->
