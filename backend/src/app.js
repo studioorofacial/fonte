@@ -1,17 +1,16 @@
-require('dotenv').config();
-require('./database/conection.js');
-
 const express = require('express');
-
 const app = express();
-console.log('app.js carregado')
+const differentialsRoutes = require('./routes/differentialsRoutes');
+const historyRoutes = require('./routes/historyRoutes');
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.get('/teste', (req, res) => {
-    res.json({
-        mensagem: 'API funcionando'
-    });
+app.get('/', (req, res) => {
+  res.json({ message: 'API rodando com sucesso!' });
 });
+
+app.use('/api', differentialsRoutes);
+app.use('/api', historyRoutes);
 
 module.exports = app;
