@@ -1,6 +1,50 @@
 
 use db_studioorofacial;
 
+# -------------------------------------------- ADMIN --------------------------------------------
+
+INSERT INTO
+    roles (name_role)
+VALUES ("root"),
+    ("admin"),
+    ("secretaria");
+
+DESCRIBE users;
+
+INSERT INTO
+    users (
+        name,
+        email,
+        password,
+        phone,
+        status,
+        role_id
+    )
+VALUES (
+        "superadmin",
+        "superadmin@email.com",
+        "123456",
+        "(11) 25143-6521",
+        1,
+        1
+    ),
+    (
+        "Maria Silva",
+        "maria_silva@email.com",
+        "123456",
+        "(11) 25143-6521",
+        1,
+        2
+    ),
+    (
+        "Carlos Pereira",
+        "carlos_pereira@email.com",
+        "123456",
+        "(11) 25143-6521",
+        1,
+        3
+    );
+
 # -------------------------------------------- Catalogo --------------------------------------------
 
 INSERT INTO
@@ -286,46 +330,3 @@ VALUES
     ("Ambiente acolhedor e confortável", 1),
     ("Planejamento individualizado para cada paciente", 1);
 
-# -------------------------------------------- ADMIN --------------------------------------------
-
-INSERT INTO
-    roles (name_role)
-VALUES ("root"),
-    ("admin"),
-    ("secretaria");
-
-DESCRIBE users;
-
-INSERT INTO
-    users (
-        name,
-        email,
-        password,
-        phone,
-        status,
-        role_id
-    )
-VALUES (
-        "superadmin",
-        "superadmin@email.com",
-        "123456",
-        "(11) 25143-6521",
-        1,
-        1
-    ),
-    (
-        "Maria Silva",
-        "maria_silva@email.com",
-        "123456",
-        "(11) 25143-6521",
-        1,
-        2
-    ),
-    (
-        "Carlos Pereira",
-        "carlos_pereira@email.com",
-        "123456",
-        "(11) 25143-6521",
-        1,
-        3
-    );
