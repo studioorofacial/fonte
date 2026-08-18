@@ -4,7 +4,7 @@ const {
     createDifferential,
     updateDifferential,
     deleteDifferential,
-} = require("../models/differentialsModel");
+} = require("../models/differentialsModel.js");
 
 
 // GET /api/differentials → retorna a lista completa

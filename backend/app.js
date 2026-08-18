@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
-const differentialsRoutes = require('./routes/differentialsRoutes');
-const historyRoutes = require('./routes/historyRoutes');
+const differentialsRoutes = require('./src/routes/differentialsRoutes');
+const historyRoutes = require('./src/routes/historyRoutes');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

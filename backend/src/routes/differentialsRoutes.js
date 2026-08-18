@@ -6,7 +6,7 @@ const {
     storeDifferential,
     editDifferential,
     removeDifferential
-} = require('../controllers/differentialsController');
+} = require('../controllers/differentialsControllers.js');
 
 router.get('/differentials', listDifferentials);
 router.get('/differentials/:id', showDifferential);

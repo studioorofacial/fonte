@@ -6,7 +6,7 @@ const {
     storeHistory,
     editHistory,
     removeHistory
-} = require('../controllers/historyController');
+} = require('../controllers/historyControllers');
 
 router.get('/history', listHistory);
 router.get('/history/:id', showHistory);
