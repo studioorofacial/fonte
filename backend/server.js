@@ -1,7 +1,9 @@
-const app = require('./src/app');
+const app = require('./app');
+require('./database/connection');
+require('dotenv').config();
 
-const PORT = 6000;
+const PORT = process.env.PORT || 6000;
 
 app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
 });

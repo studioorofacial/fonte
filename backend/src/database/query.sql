@@ -1,6 +1,8 @@
 
 use db_studioorofacial;
 
+Select * from home_info;
+
 # -------------------------------------------- ADMIN --------------------------------------------
 
 INSERT INTO
