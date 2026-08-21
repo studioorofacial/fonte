@@ -48,6 +48,18 @@ VALUES (
     );
 
 # -------------------------------------------- Catalogo --------------------------------------------
+use db_studioorofacial;
+INSERT INTO
+    main (
+        title,
+        subtitle,
+        id_user
+    )
+VALUES (
+        "Studio Orofacial",
+        "Conheça mais sobre nosso ambiente",
+        1
+    );
 
 INSERT INTO
     main (
