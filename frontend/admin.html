@@ -9,7 +9,8 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <!-- Bootstrap Icons -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/admin.js"></script>
 <style>
 /* ============================================================
    PALETA STUDIO OROFACIAL
@@ -906,14 +907,37 @@ textarea.form-control { resize: vertical; min-height: 90px; }
         </div>
         <ul class="nav nav-tabs">
           <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'catalogo','main')">Catálogo Main</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'catalogo','item')">Itens</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'catalogo','item'); carregarItens()">Itens</a></li>
+          <!-- <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'catalogo','item')">Itens</a></li> -->
         </ul>
         <div class="tab-content">
 
           <div id="catalogo-tab-main" class="tab-pane active">
             <div class="admin-card">
               <h2><i class="bi bi-pin-map-fill"></i> Catálogo Main <span class="badge-table ms-2">catalogo_main</span></h2>
-              <form onsubmit="handleSubmit(event,'catalogo_main')">
+              <form onsubmit="handleItemSubmit(event)" id="form-item-catalogo">
+                <input type="hidden" id="item-id" value="">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">item_catalogo_titulo</label>
+                    <input type="text" class="form-control" id="item-titulo" placeholder="Nome do produto/serviço" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">item_catalogo_descricao_curta</label>
+                    <input type="text" class="form-control" id="item-desc-curta" placeholder="Descrição curta (card)" required>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">item_catalogo_descricao_modal</label>
+                    <textarea class="form-control" id="item-desc-modal" rows="4" placeholder="Descrição completa (modal)..."></textarea>
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo" id="item-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarItemAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioItem()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                </div>
+              </form>
+              <!-- <form onsubmit="handleSubmit(event,'catalogo_main')">
                 <div class="row g-3">
                   <div class="col-md-6"><label class="form-label">catalogo_Titulo</label><input type="text" class="form-control" name="catalogo_Titulo" placeholder="Título"></div>
                   <div class="col-md-6"><label class="form-label">contato_subtitulo</label><input type="text" class="form-control" name="contato_subtitulo" placeholder="Subtítulo"></div>
@@ -923,7 +947,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('catalogo_main')"><i class="bi bi-trash me-1"></i>Deletar</button>
                   <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
-              </form>
+              </form> -->
             </div>
             <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">catalogo_main</span></h2>
               <div class="table-responsive"><table class="table table-bordered table-hover">
@@ -1364,7 +1388,8 @@ function renderTable(table) {
       <td>${i+1}</td>
       ${fields.map(f=>`<td title="${r[f]||''}">${trunc(r[f]||'—',35)}</td>`).join('')}
       <td>
-        <button class="btn-sm-roxo me-1" onclick="openEdit('${table}',${r._id})"><i class="bi bi-pencil-fill"></i> Editar</button>
+        <button class="btn-sm-roxo me-1" onclick="editarItem(${item.id_item})"><i class="bi bi-pencil-fill"></i> Editar</button>
+        // <button class="btn-sm-roxo me-1" onclick="openEdit('${table}',${r._id})"><i class="bi bi-pencil-fill"></i> Editar</button>
         <button class="btn-sm-danger"    onclick="confirmDelete('${table}',${r._id})"><i class="bi bi-trash-fill"></i></button>
       </td>
     </tr>`).join('');
