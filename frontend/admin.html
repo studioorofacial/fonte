@@ -9,8 +9,6 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <!-- Bootstrap Icons -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/admin.js"></script>
 <style>
 /* ============================================================
    PALETA STUDIO OROFACIAL
@@ -684,7 +682,8 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="home-tab-main" class="tab-pane active">
             <div class="admin-card">
               <h2><i class="bi bi-pin-map-fill"></i> Home Main <span class="badge-table ms-2">home_main</span></h2>
-              <form onsubmit="handleSubmit(event,'home_main')">
+              <form id="form-home_main" onsubmit="handleSubmit(event,'home_main')">
+                <input type="hidden" name="id" value="">
                 <div class="row g-3">
                   <div class="col-12"><label class="form-label">home_Titulo</label><input type="text" class="form-control" name="home_Titulo" placeholder="Título principal"></div>
                   <div class="col-12"><label class="form-label">home_subtitulo</label><input type="text" class="form-control" name="home_subtitulo" placeholder="Subtítulo"></div>
@@ -692,7 +691,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('home_main')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('home_main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -708,7 +707,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="home-tab-carousel" class="tab-pane">
             <div class="admin-card">
               <h2><i class="bi bi-images"></i> Home Carousel <span class="badge-table ms-2">home_carousel</span></h2>
-              <form onsubmit="handleSubmit(event,'home_carousel')">
+              <form id="form-home_carousel" onsubmit="handleSubmit(event,'home_carousel')">
                 <input type="hidden" name="id" value="">
                 <div class="row g-3">
                   <div class="col-md-6"><label class="form-label">Image_Titulo</label><input type="text" class="form-control" name="Image_Titulo" placeholder="Título do slide"></div>
@@ -718,7 +717,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('home_carousel')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('home_carousel')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -734,7 +733,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="home-tab-info" class="tab-pane">
             <div class="admin-card">
               <h2><i class="bi bi-info-circle-fill"></i> Home Info <span class="badge-table ms-2">home_info</span></h2>
-              <form onsubmit="handleSubmit(event,'home_info')">
+              <form id="form-home_info" onsubmit="handleSubmit(event,'home_info')">
                 <input type="hidden" name="id" value="">
                 <div class="row g-3">
                   <div class="col-md-6"><label class="form-label">info_image (URL)</label><input type="url" class="form-control" name="info_image" placeholder="https://..."></div>
@@ -743,7 +742,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('home_info')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('home_info')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -777,7 +776,8 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="sobre-tab-main" class="tab-pane active">
             <div class="admin-card">
               <h2><i class="bi bi-pin-map-fill"></i> Sobre Main <span class="badge-table ms-2">sobre_main</span></h2>
-              <form onsubmit="handleSubmit(event,'sobre_main')">
+              <form id="form-sobre_main" onsubmit="handleSubmit(event,'sobre_main')">
+                <input type="hidden" name="id" value="">
                 <div class="row g-3">
                   <div class="col-md-6"><label class="form-label">sobre_Titulo</label><input type="text" class="form-control" name="sobre_Titulo" placeholder="Título"></div>
                   <div class="col-md-6"><label class="form-label">sobre_subtitulo</label><input type="text" class="form-control" name="sobre_subtitulo" placeholder="Subtítulo"></div>
@@ -785,7 +785,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('sobre_main')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('sobre_main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -800,7 +800,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="sobre-tab-historia" class="tab-pane">
             <div class="admin-card">
               <h2><i class="bi bi-book-fill"></i> História <span class="badge-table ms-2">historia</span></h2>
-              <form onsubmit="handleSubmit(event,'historia')">
+              <form id="form-historia" onsubmit="handleSubmit(event,'historia')">
                 <input type="hidden" name="id" value="">
                 <div class="row g-3">
                   <div class="col-md-6"><label class="form-label">Historia_titulo</label><input type="text" class="form-control" name="Historia_titulo" placeholder="Título"></div>
@@ -810,7 +810,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('historia')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('historia')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -825,7 +825,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="sobre-tab-principios" class="tab-pane">
             <div class="admin-card">
               <h2><i class="bi bi-check-circle-fill"></i> Princípios <span class="badge-table ms-2">principios</span></h2>
-              <form onsubmit="handleSubmit(event,'principios')">
+              <form id="form-principios" onsubmit="handleSubmit(event,'principios')">
                 <input type="hidden" name="id" value="">
                 <div class="row g-3">
                   <div class="col-md-6"><label class="form-label">principios_titulo</label><input type="text" class="form-control" name="principios_titulo" placeholder="Ex: Missão"></div>
@@ -835,7 +835,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('principios')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('principios')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -850,7 +850,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="sobre-tab-equipe" class="tab-pane">
             <div class="admin-card">
               <h2><i class="bi bi-people-fill"></i> Equipe <span class="badge-table ms-2">equipe</span></h2>
-              <form onsubmit="handleSubmit(event,'equipe')">
+              <form id="form-equipe" onsubmit="handleSubmit(event,'equipe')">
                 <input type="hidden" name="id" value="">
                 <div class="row g-3">
                   <div class="col-md-6"><label class="form-label">equipe_especialista</label><input type="text" class="form-control" name="equipe_especialista" placeholder="Nome"></div>
@@ -861,7 +861,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('equipe')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('equipe')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -876,7 +876,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="sobre-tab-diferenciais" class="tab-pane">
             <div class="admin-card">
               <h2><i class="bi bi-star-fill"></i> Diferenciais <span class="badge-table ms-2">diferenciais</span></h2>
-              <form onsubmit="handleSubmit(event,'diferenciais')">
+              <form id="form-diferenciais" onsubmit="handleSubmit(event,'diferenciais')">
                 <input type="hidden" name="id" value="">
                 <div class="row g-3">
                   <div class="col-12"><label class="form-label">Diferenciais_descricao</label><textarea class="form-control" name="Diferenciais_descricao" rows="3" placeholder="Descrição do diferencial..."></textarea></div>
@@ -884,7 +884,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('diferenciais')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('diferenciais')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -915,39 +915,18 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="catalogo-tab-main" class="tab-pane active">
             <div class="admin-card">
               <h2><i class="bi bi-pin-map-fill"></i> Catálogo Main <span class="badge-table ms-2">catalogo_main</span></h2>
-              <form onsubmit="handleItemSubmit(event)" id="form-item-catalogo">
-                <input type="hidden" id="item-id" value="">
+              <form id="form-catalogo_main" onsubmit="handleSubmit(event,'catalogo_main')">
+                <input type="hidden" name="id" value="">
                 <div class="row g-3">
-                  <div class="col-md-6">
-                    <label class="form-label">item_catalogo_titulo</label>
-                    <input type="text" class="form-control" id="item-titulo" placeholder="Nome do produto/serviço" required>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">item_catalogo_descricao_curta</label>
-                    <input type="text" class="form-control" id="item-desc-curta" placeholder="Descrição curta (card)" required>
-                  </div>
-                  <div class="col-12">
-                    <label class="form-label">item_catalogo_descricao_modal</label>
-                    <textarea class="form-control" id="item-desc-modal" rows="4" placeholder="Descrição completa (modal)..."></textarea>
-                  </div>
-                </div>
-                <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo" id="item-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
-                  <button type="button" class="btn btn-danger" onclick="deletarItemAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="button" class="btn btn-dourado" onclick="limparFormularioItem()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
-                </div>
-              </form>
-              <!-- <form onsubmit="handleSubmit(event,'catalogo_main')">
-                <div class="row g-3">
-                  <div class="col-md-6"><label class="form-label">catalogo_Titulo</label><input type="text" class="form-control" name="catalogo_Titulo" placeholder="Título"></div>
-                  <div class="col-md-6"><label class="form-label">contato_subtitulo</label><input type="text" class="form-control" name="contato_subtitulo" placeholder="Subtítulo"></div>
+                  <div class="col-md-6"><label class="form-label">catalogo_Titulo</label><input type="text" class="form-control" name="catalogo_Titulo" placeholder="Título" required></div>
+                  <div class="col-md-6"><label class="form-label">catalogo_subtitulo</label><input type="text" class="form-control" name="catalogo_subtitulo" placeholder="Subtítulo" required></div>
                 </div>
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('catalogo_main')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('catalogo_main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
-              </form> -->
+              </form>
             </div>
             <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">catalogo_main</span></h2>
               <div class="table-responsive"><table class="table table-bordered table-hover">
@@ -956,11 +935,10 @@ textarea.form-control { resize: vertical; min-height: 90px; }
               </table></div>
             </div>
           </div>
-
           <div id="catalogo-tab-item" class="tab-pane">
             <div class="admin-card">
               <h2><i class="bi bi-card-list"></i> Itens do Catálogo <span class="badge-table ms-2">item_catalogo</span></h2>
-              <form onsubmit="handleSubmit(event,'item_catalogo')">
+              <form id="form-item_catalogo" onsubmit="handleSubmit(event,'item_catalogo')">
                 <input type="hidden" name="id" value="">
                 <div class="row g-3">
                   <div class="col-md-6"><label class="form-label">item_catalogo_titulo</label><input type="text" class="form-control" name="item_catalogo_titulo" placeholder="Nome do produto/serviço"></div>
@@ -970,7 +948,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('item_catalogo')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('item_catalogo')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -1002,7 +980,8 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="contato-tab-main" class="tab-pane active">
             <div class="admin-card">
               <h2><i class="bi bi-pin-map-fill"></i> Contato Main <span class="badge-table ms-2">contato_main</span></h2>
-              <form onsubmit="handleSubmit(event,'contato_main')">
+              <form id="form-contato_main" onsubmit="handleSubmit(event,'contato_main')">
+                <input type="hidden" name="id" value="">
                 <div class="row g-3">
                   <div class="col-md-6"><label class="form-label">contato_titulo</label><input type="text" class="form-control" name="contato_titulo" placeholder="Título"></div>
                   <div class="col-md-6"><label class="form-label">contato_subtitulo</label><input type="text" class="form-control" name="contato_subtitulo" placeholder="Subtítulo"></div>
@@ -1010,7 +989,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('contato_main')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('contato_main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -1025,7 +1004,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="contato-tab-mensagem" class="tab-pane">
             <div class="admin-card">
               <h2><i class="bi bi-chat-fill"></i> Mensagens <span class="badge-table ms-2">mensagem</span></h2>
-              <form onsubmit="handleSubmit(event,'mensagem')">
+              <form id="form-mensagem" onsubmit="handleSubmit(event,'mensagem')">
                 <input type="hidden" name="id" value="">
                 <div class="row g-3">
                   <div class="col-md-6"><label class="form-label">mensagem_nome</label><input type="text" class="form-control" name="mensagem_nome" placeholder="Nome"></div>
@@ -1035,7 +1014,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('mensagem')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('mensagem')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -1050,16 +1029,16 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="contato-tab-localizacao" class="tab-pane">
             <div class="admin-card">
               <h2><i class="bi bi-geo-alt-fill"></i> Localização <span class="badge-table ms-2">localizacao</span></h2>
-              <form onsubmit="handleSubmit(event,'localizacao')">
+              <form id="form-localizacao" onsubmit="handleSubmit(event,'localizacao')">
                 <input type="hidden" name="id" value="">
-                <div class="row g-3">
-                  <div class="col-12"><label class="form-label">localizacao_maps (URL embed)</label><input type="url" class="form-control" name="localizacao_maps" placeholder="https://maps.google.com/embed?..."></div>
+                                <div class="row g-3">
+                  <div class="col-12"><label class="form-label">localizacao_maps (URL embed)</label><input type="url" class="form-control" name="localizacao_maps" placeholder="https://maps.google.com/embed?..." /></div>
                   <div class="col-12"><label class="form-label">localizacao_endereco</label><input type="text" class="form-control" name="localizacao_endereco" placeholder="Rua Exemplo, 123 — Bairro, Cidade - UF"></div>
                 </div>
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('localizacao')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('localizacao')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -1074,10 +1053,10 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <div id="contato-tab-info" class="tab-pane">
             <div class="admin-card">
               <h2><i class="bi bi-telephone-fill"></i> Contato Info <span class="badge-table ms-2">contato_info</span></h2>
-              <form onsubmit="handleSubmit(event,'contato_info')">
+              <form id="form-contato_info" onsubmit="handleSubmit(event,'contato_info')">
                 <input type="hidden" name="id" value="">
                 <div class="row g-3">
-                  <div class="col-12"><label class="form-label">localizacao_maps (URL embed)</label><input type="url" class="form-control" name="localizacao_maps" placeholder="https://maps.google.com/embed?..."></div>
+
                   <div class="col-md-6"><label class="form-label">contato_info_telefone</label><input type="tel" class="form-control" name="contato_info_telefone" placeholder="(11) 4515-0556"></div>
                   <div class="col-md-6"><label class="form-label">contato_info_whatsapp</label><input type="tel" class="form-control" name="contato_info_whatsapp" placeholder="(11) 97199-3704"></div>
                   <div class="col-12"><label class="form-label">contato_info_texto_atendimento</label><textarea class="form-control" name="contato_info_texto_atendimento" placeholder="Ex: Seg a Sex das 9h às 18h"></textarea></div>
@@ -1085,7 +1064,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                 <div class="btn-row">
                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
                   <button type="button" class="btn btn-danger" onclick="confirmDelete('contato_info')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('contato_info')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -1249,392 +1228,6 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-// ============================================================
-// STATE — banco em memória
-// ============================================================
-const DB = {};
-let currentUser = null;
-let deleteCtx   = null;
-let editCtx     = null;
-
-const bsDeleteModal = null; // inicializado depois do DOM
-let _bsDelete, _bsEdit;
-
-window.addEventListener('DOMContentLoaded', () => {
-  _bsDelete = new bootstrap.Modal(document.getElementById('modal-delete'));
-  _bsEdit   = new bootstrap.Modal(document.getElementById('modal-edit'));
-});
-
-function dbGet(t)        { return DB[t] || []; }
-function dbInsert(t, r)  { if (!DB[t]) DB[t] = []; r._id = Date.now(); DB[t].push(r); }
-function dbUpdate(t,id,d){ DB[t] = (DB[t]||[]).map(r => r._id==id ? {...r,...d} : r); }
-function dbDelete(t, id) { DB[t] = (DB[t]||[]).filter(r => r._id!=id); }
-
-// Seed super admin padrão
-DB['_admins'] = [{
-  _id:1, admin_nome:'Super Admin', admin_email:'super@admin.com',
-  admin_usuario:'superadmin', admin_senha:'Admin@123',
-  admin_perfil:'super', admin_status:'active',
-  _created: new Date().toLocaleDateString('pt-BR')
-}];
-
-const roleLabels = {
-  super:  { label:'Super Admin', cls:'role-super' },
-  admin:  { label:'Admin',       cls:'role-admin' },
-  editor: { label:'Editor',      cls:'role-editor' },
-  viewer: { label:'Visualizador',cls:'role-viewer' },
-};
-
-// ============================================================
-// AUTH
-// ============================================================
-function doLogin() {
-  const user = document.getElementById('login-user').value.trim();
-  const pass = document.getElementById('login-pass').value;
-  const found = (DB['_admins']||[]).find(a =>
-    (a.admin_usuario===user || a.admin_email===user) &&
-    a.admin_senha===pass && a.admin_status==='active'
-  );
-  if (!found) {
-    document.getElementById('login-error').style.display = 'block';
-    return;
-  }
-  document.getElementById('login-error').style.display = 'none';
-  currentUser = found;
-  document.getElementById('login-screen').style.display  = 'none';
-  document.getElementById('panel-screen').style.display  = 'flex';
-  document.getElementById('topbar-name').textContent   = found.admin_nome;
-  document.getElementById('topbar-role').textContent   = roleLabels[found.admin_perfil]?.label || found.admin_perfil;
-  document.getElementById('topbar-avatar').textContent = found.admin_nome.charAt(0).toUpperCase();
-  if (found.admin_perfil === 'super') {
-    document.getElementById('nav-admins').style.display = 'flex';
-  }
-}
-
-function doLogout() {
-  currentUser = null;
-  document.getElementById('panel-screen').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('login-user').value = '';
-  document.getElementById('login-pass').value = '';
-  document.getElementById('nav-admins').style.display = 'none';
-}
-
-// ============================================================
-// NAVIGATION
-// ============================================================
-function showPage(page, link) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  if (link) link.classList.add('active');
-  if (page === 'admins') { renderAdmins(); renderAdminStats(); }
-}
-
-// ============================================================
-// TABS
-// ============================================================
-function switchTab(link, page, tab) {
-  const parent = link.closest('.page');
-  parent.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  parent.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  link.classList.add('active');
-  document.getElementById(page+'-tab-'+tab).classList.add('active');
-}
-
-// ============================================================
-// FORM SUBMIT
-// ============================================================
-const schemas = {
-  home_main:     ['home_Titulo','home_subtitulo'],
-  home_carousel: ['Image_Titulo','Image_Descricao','Image_Backgroud'],
-  home_info:     ['info_texto','info_image'],
-  sobre_main:    ['sobre_Titulo','sobre_subtitulo'],
-  historia:      ['Historia_titulo','Historia_texto','Historia_Image'],
-  principios:    ['principios_titulo','principios_texto','principios_icone'],
-  equipe:        ['equipe_especialista','equipe_universidade','equipe_formacao','equipe_image'],
-  diferenciais:  ['Diferenciais_descricao'],
-  catalogo_main: ['catalogo_Titulo','contato_subtitulo'],
-  item_catalogo: ['item_catalogo_titulo','item_catalogo_descricao_curta','item_catalogo_descricao_modal'],
-  contato_main:  ['contato_titulo','contato_subtitulo'],
-  mensagem:      ['mensagem_nome','mensagem_email','mensagem_texto'],
-  localizacao:   ['localizacao_maps','localizacao_endereco'],
-  contato_info:  ['localizacao_maps','contato_info_telefone','contato_info_whatsapp','contato_info_texto_atendimento'],
-};
-
-function handleSubmit(e, table) {
-  e.preventDefault();
-  const form = e.target;
-  const data = Object.fromEntries(new FormData(form));
-  const id = data.id; delete data.id;
-  if (id) { dbUpdate(table, id, data); showToast('Registro atualizado!','success'); }
-  else    { dbInsert(table, data);     showToast('Registro inserido!','success'); }
-  form.reset();
-  renderTable(table);
-}
-
-function renderTable(table) {
-  const tbody  = document.getElementById('tb-'+table);
-  if (!tbody) return;
-  const rows   = dbGet(table);
-  const fields = schemas[table] || [];
-  if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="${fields.length+2}" class="text-center text-muted py-3">Nenhum registro</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = rows.map((r,i) => `
-    <tr>
-      <td>${i+1}</td>
-      ${fields.map(f=>`<td title="${r[f]||''}">${trunc(r[f]||'—',35)}</td>`).join('')}
-      <td>
-        <button class="btn-sm-roxo me-1" onclick="editarItem(${item.id_item})"><i class="bi bi-pencil-fill"></i> Editar</button>
-        // <button class="btn-sm-roxo me-1" onclick="openEdit('${table}',${r._id})"><i class="bi bi-pencil-fill"></i> Editar</button>
-        <button class="btn-sm-danger"    onclick="confirmDelete('${table}',${r._id})"><i class="bi bi-trash-fill"></i></button>
-      </td>
-    </tr>`).join('');
-}
-
-function trunc(s,n){ s=String(s); return s.length>n ? s.slice(0,n)+'…' : s; }
-
-// ============================================================
-// EDIT MODAL
-// ============================================================
-function openEdit(table, id) {
-  const row = dbGet(table).find(r=>r._id==id);
-  if (!row) return;
-  editCtx = { table, id };
-  const fields = schemas[table] || [];
-  document.getElementById('modal-edit-title').innerHTML = `<i class="bi bi-pencil-fill me-2"></i>Editar — ${table}`;
-  document.getElementById('modal-edit-body').innerHTML = `<div class="row g-3">${
-    fields.map(f=>`<div class="col-12">
-      <label class="form-label">${f}</label>
-      ${f.toLowerCase().includes('texto')||f.toLowerCase().includes('descricao')
-        ? `<textarea class="form-control" id="edit-${f}" rows="3">${row[f]||''}</textarea>`
-        : `<input type="text" class="form-control" id="edit-${f}" value="${row[f]||''}">`}
-    </div>`).join('')
-  }</div>`;
-  _bsEdit.show();
-}
-
-function saveEdit() {
-  if (!editCtx) return;
-  const fields = schemas[editCtx.table] || [];
-  const data = {};
-  fields.forEach(f => { const el=document.getElementById('edit-'+f); if(el) data[f]=el.value; });
-  dbUpdate(editCtx.table, editCtx.id, data);
-  renderTable(editCtx.table);
-  _bsEdit.hide();
-  showToast('Registro atualizado!','success');
-}
-
-// ============================================================
-// DELETE
-// ============================================================
-function confirmDelete(table, id) {
-  deleteCtx = { table, id };
-  _bsDelete.show();
-}
-
-function doDelete() {
-  if (!deleteCtx) return;
-  if (deleteCtx.id) {
-    dbDelete(deleteCtx.table, deleteCtx.id);
-    if (deleteCtx.table==='_admins') { renderAdmins(); renderAdminStats(); }
-    else renderTable(deleteCtx.table);
-    showToast('Registro excluído!','danger');
-  }
-  _bsDelete.hide();
-}
-
-// ============================================================
-// ADMIN CRUD
-// ============================================================
-function handleAdminSubmit(e) {
-  e.preventDefault();
-  const id      = document.getElementById('admin-form-id').value;
-  const nome    = document.getElementById('af-nome').value.trim();
-  const email   = document.getElementById('af-email').value.trim();
-  const usuario = document.getElementById('af-usuario').value.trim();
-  const perfil  = document.getElementById('af-perfil').value;
-  const senha   = document.getElementById('af-senha').value;
-  const senha2  = document.getElementById('af-senha2').value;
-  const status  = document.getElementById('af-status').value;
-
-  if (!nome||!email||!usuario) { showToast('Preencha nome, e-mail e usuário.','danger'); return; }
-  const admins = DB['_admins']||[];
-  const dup = admins.find(a=>a._id!=id&&(a.admin_email===email||a.admin_usuario===usuario));
-  if (dup) { showToast('E-mail ou usuário já cadastrado!','danger'); return; }
-
-  if (id) {
-    if (senha) {
-      if (senha!==senha2){ showToast('As senhas não conferem!','danger'); return; }
-      if (senha.length<8){ showToast('Mínimo 8 caracteres.','danger'); return; }
-    }
-    DB['_admins'] = admins.map(a => a._id==id ? {
-      ...a, admin_nome:nome, admin_email:email, admin_usuario:usuario,
-      admin_perfil:perfil, admin_status:status,
-      ...(senha?{admin_senha:senha}:{})
-    } : a);
-    showToast('Administrador atualizado!','success');
-  } else {
-    if (!senha)          { showToast('Informe uma senha.','danger'); return; }
-    if (senha!==senha2)  { showToast('As senhas não conferem!','danger'); return; }
-    if (senha.length<8)  { showToast('Mínimo 8 caracteres.','danger'); return; }
-    DB['_admins'].push({
-      _id:Date.now(), admin_nome:nome, admin_email:email, admin_usuario:usuario,
-      admin_senha:senha, admin_perfil:perfil, admin_status:status,
-      _created:new Date().toLocaleDateString('pt-BR')
-    });
-    showToast('Administrador cadastrado!','success');
-  }
-  resetAdminForm(); renderAdmins(); renderAdminStats();
-}
-
-function resetAdminForm() {
-  document.getElementById('admin-form-id').value='';
-  ['af-nome','af-email','af-usuario','af-senha','af-senha2'].forEach(id=>{ document.getElementById(id).value=''; });
-  document.getElementById('af-perfil').value='admin';
-  document.getElementById('af-status').value='active';
-  document.getElementById('admin-form-btn').innerHTML='<i class="bi bi-person-plus-fill me-1"></i>Cadastrar Administrador';
-  document.getElementById('pw-bar').className='pw-bar';
-  document.getElementById('pw-hint').textContent='';
-}
-
-function editAdmin(id) {
-  const a=(DB['_admins']||[]).find(x=>x._id==id);
-  if (!a) return;
-  document.getElementById('admin-form-id').value=a._id;
-  document.getElementById('af-nome').value=a.admin_nome;
-  document.getElementById('af-email').value=a.admin_email;
-  document.getElementById('af-usuario').value=a.admin_usuario;
-  document.getElementById('af-perfil').value=a.admin_perfil;
-  document.getElementById('af-status').value=a.admin_status;
-  document.getElementById('af-senha').value='';
-  document.getElementById('af-senha2').value='';
-  document.getElementById('admin-form-btn').innerHTML='<i class="bi bi-floppy-fill me-1"></i>Salvar Alterações';
-  document.getElementById('pw-hint').textContent='Deixe em branco para manter a senha atual.';
-  document.querySelector('#page-admins .admin-card').scrollIntoView({behavior:'smooth'});
-}
-
-function deleteAdmin(id) {
-  if (id==(currentUser&&currentUser._id)) { showToast('Não é possível excluir a própria conta!','danger'); return; }
-  deleteCtx={table:'_admins',id};
-  _bsDelete.show();
-}
-
-function renderAdmins() {
-  const search=(document.getElementById('admin-search')?.value||'').toLowerCase();
-  const perfil=document.getElementById('admin-filter-perfil')?.value||'';
-  const status=document.getElementById('admin-filter-status')?.value||'';
-  let list=DB['_admins']||[];
-  if(search) list=list.filter(a=>(a.admin_nome+a.admin_email+a.admin_usuario).toLowerCase().includes(search));
-  if(perfil) list=list.filter(a=>a.admin_perfil===perfil);
-  if(status) list=list.filter(a=>a.admin_status===status);
-  const isSup=currentUser&&currentUser.admin_perfil==='super';
-
-  // Cards
-  const grid=document.getElementById('admin-grid');
-  if(grid){
-    grid.innerHTML=list.length ? list.map(a=>{
-      const r=roleLabels[a.admin_perfil]||{label:a.admin_perfil,cls:'role-viewer'};
-      const initials=a.admin_nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
-      const isMe=currentUser&&a._id==currentUser._id;
-      return `<div class="col-md-4 col-sm-6">
-        <div class="user-card">
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <div class="avatar">${initials}</div>
-            <div class="overflow-hidden">
-              <div class="user-card-name">${a.admin_nome}${isMe?' <span class="badge" style="background:var(--roxo);font-size:9px">você</span>':''}</div>
-              <div class="user-card-email">${a.admin_email}</div>
-            </div>
-          </div>
-          <div class="text-muted" style="font-size:12px">@${a.admin_usuario}</div>
-          <div class="user-card-footer">
-            <div>
-              <span class="role-badge ${r.cls}">${r.label}</span>
-              <span style="font-size:12px;margin-left:6px">
-                <span class="status-dot ${a.admin_status}"></span>${a.admin_status==='active'?'Ativo':'Inativo'}
-              </span>
-            </div>
-            ${isSup?`<div class="d-flex gap-1">
-              <button class="btn-sm-roxo" onclick="editAdmin(${a._id})"><i class="bi bi-pencil-fill"></i></button>
-              <button class="btn-sm-danger" onclick="deleteAdmin(${a._id})" ${isMe?'disabled':''}><i class="bi bi-trash-fill"></i></button>
-            </div>`:''}
-          </div>
-        </div>
-      </div>`;
-    }).join('') : '<div class="col-12 text-muted">Nenhum administrador encontrado.</div>';
-  }
-
-  // Tabela
-  const tbody=document.getElementById('tb-admins');
-  if(tbody){
-    tbody.innerHTML=list.length ? list.map((a,i)=>{
-      const r=roleLabels[a.admin_perfil]||{label:a.admin_perfil,cls:'role-viewer'};
-      const isMe=currentUser&&a._id==currentUser._id;
-      return `<tr>
-        <td>${i+1}</td>
-        <td>${a.admin_nome}${isMe?' <span class="badge" style="background:var(--roxo);font-size:9px">você</span>':''}</td>
-        <td><code style="background:var(--roxo-pale);padding:2px 7px;border-radius:4px;font-size:12px;color:var(--roxo)">@${a.admin_usuario}</code></td>
-        <td>${a.admin_email}</td>
-        <td><span class="role-badge ${r.cls}">${r.label}</span></td>
-        <td><span class="status-dot ${a.admin_status}"></span>${a.admin_status==='active'?'Ativo':'Inativo'}</td>
-        <td style="font-size:12px;color:#999">${a._created||'—'}</td>
-        <td>${isSup?`<div class="d-flex gap-1">
-          <button class="btn-sm-roxo" onclick="editAdmin(${a._id})"><i class="bi bi-pencil-fill"></i> Editar</button>
-          <button class="btn-sm-danger" onclick="deleteAdmin(${a._id})" ${isMe?'disabled':''} ><i class="bi bi-trash-fill"></i></button>
-        </div>`:'<span class="text-muted">—</span>'}</td>
-      </tr>`;
-    }).join('') : '<tr><td colspan="8" class="text-center text-muted py-3">Nenhum registro</td></tr>';
-  }
-}
-
-function renderAdminStats(){
-  const a=DB['_admins']||[];
-  const c=document.getElementById('admin-stats');
-  if(!c)return;
-  const mk=(icon,label,val,color)=>`<div class="col-6 col-md-3">
-    <div class="stat-card">
-      <div class="stat-icon">${icon}</div>
-      <div class="stat-value" style="color:${color}">${val}</div>
-      <div class="stat-label">${label}</div>
-    </div>
-  </div>`;
-  c.innerHTML=
-    mk('<i class="bi bi-people-fill" style="color:var(--roxo)"></i>','Total',a.length,'var(--roxo)')+
-    mk('<i class="bi bi-check-circle-fill" style="color:#198754"></i>','Ativos',a.filter(x=>x.admin_status==='active').length,'#198754')+
-    mk('<i class="bi bi-shield-fill" style="color:var(--dourado)"></i>','Super Admins',a.filter(x=>x.admin_perfil==='super').length,'var(--dourado)')+
-    mk('<i class="bi bi-pencil-fill" style="color:#5a7fcc"></i>','Editores',a.filter(x=>x.admin_perfil==='editor').length,'#5a7fcc');
-}
-
-// ============================================================
-// PW UTILS
-// ============================================================
-function checkStrength(input){
-  const v=input.value,bar=document.getElementById('pw-bar'),hint=document.getElementById('pw-hint');
-  let s=0;
-  if(v.length>=8)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;
-  bar.className='pw-bar'+(s?' s'+s:'');
-  hint.textContent=v.length?['','Fraca','Razoável','Boa','Forte ✓'][s]:'';
-}
-
-function togglePw(id,btn){
-  const el=document.getElementById(id);
-  if(!el)return;
-  el.type=el.type==='password'?'text':'password';
-  btn.innerHTML=el.type==='password'?'<i class="bi bi-eye"></i>':'<i class="bi bi-eye-slash"></i>';
-}
-
-// ============================================================
-// TOAST
-// ============================================================
-function showToast(msg, type='success'){
-  const el=document.getElementById('main-toast');
-  el.className=`toast align-items-center text-white border-0 bg-${type==='success'?'success':type==='danger'?'danger':'secondary'}`;
-  document.getElementById('toast-msg').textContent=msg;
-  new bootstrap.Toast(el,{delay:2800}).show();
-}
-</script>
+<script src="js/admin-cms.js"></script>
 </body>
 </html>

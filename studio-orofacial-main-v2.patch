@@ -1,0 +1,2284 @@
+[1mdiff --git a/backend/.env.example b/backend/.env.example[m
+[1mnew file mode 100644[m
+[1mindex 0000000..1738d84[m
+[1m--- /dev/null[m
+[1m+++ b/backend/.env.example[m
+[36m@@ -0,0 +1,9 @@[m
+[32m+[m[32mPORT=6000[m
+[32m+[m[32mDB_HOST=127.0.0.1[m
+[32m+[m[32mDB_PORT=3306[m
+[32m+[m[32mDB_USER=seu_usuario[m
+[32m+[m[32mDB_PASSWORD=sua_password[m
+[32m+[m[32mDB_NAME=db_studioorofacial[m
+[32m+[m[32mDB_CONNECTION_LIMIT=10[m
+[32m+[m[32mJWT_SECRET=gere-uma-chave-longa-e-aleatoria[m
+[32m+[m[32mNODE_ENV=development[m
+[1mdiff --git a/backend/app.js b/backend/app.js[m
+[1mindex 2988771..0233802 100644[m
+[1m--- a/backend/app.js[m
+[1m+++ b/backend/app.js[m
+[36m@@ -1,8 +1,9 @@[m
+[31m-[m
+[32m+[m[32mconst path = require('node:path');[m
+ const express = require('express');[m
+ const cors = require('cors');[m
+[31m-const app = express();[m
+[32m+[m[32mconst cmsRoutes = require('./src/routes/cmsRoutes');[m
+ [m
+[32m+[m[32m// Rotas legadas do branch main-v2 continuam disponíveis para compatibilidade.[m
+ const differentialsRoutes = require('./src/routes/differentialsRoutes');[m
+ const historyRoutes = require('./src/routes/historyRoutes');[m
+ const carouselRoutes = require('./src/routes/carouselRoutes.js');[m
+[36m@@ -15,12 +16,16 @@[m [mconst principlesRoutes = require('./src/routes/principlesRoutes.js');[m
+ const rolesRoutes = require('./src/routes/rolesRoutes.js');[m
+ const teamRoutes = require('./src/routes/teamRoutes.js');[m
+ [m
+[31m-// 1º: middlewares de configuração SEMPRE primeiro[m
+[31m-app.use(cors());[m
+[31m-app.use(express.json());[m
+[32m+[m[32mconst app = express();[m
+[32m+[m
+[32m+[m[32mapp.use(cors({ origin: true, credentials: true }));[m
+[32m+[m[32mapp.use(express.json({ limit: '1mb' }));[m
+ app.use(express.urlencoded({ extended: true }));[m
+ [m
+[31m-// 2º: rotas depois[m
+[32m+[m[32m// API CMS unificada usada pelo frontend atual.[m
+[32m+[m[32mapp.use('/api', cmsRoutes);[m
+[32m+[m
+[32m+[m[32m// API legada, mantida para não quebrar consumidores existentes.[m
+ app.use('/api', teamRoutes);[m
+ app.use('/api', rolesRoutes);[m
+ app.use('/api', principlesRoutes);[m
+[36m@@ -33,8 +38,15 @@[m [mapp.use('/api', carouselRoutes);[m
+ app.use('/api', differentialsRoutes);[m
+ app.use('/api', historyRoutes);[m
+ [m
+[31m-app.get('/', (req, res) => {[m
+[31m-    res.json({ message: 'API rodando com sucesso!' });[m
+[32m+[m[32mapp.get('/', (req, res) => res.json({ message: 'API rodando com sucesso!' }));[m
+[32m+[m[32mapp.use(express.static(path.resolve(__dirname, '../frontend')));[m
+[32m+[m
+[32m+[m[32mapp.use((error, req, res, next) => {[m
+[32m+[m[32m  console.error('[API]', error);[m
+[32m+[m[32m  if (res.headersSent) return next(error);[m
+[32m+[m[32m  res.status(error.statusCode || 500).json({[m
+[32m+[m[32m    error: error.statusCode ? error.message : 'Erro interno do servidor.',[m
+[32m+[m[32m  });[m
+ });[m
+ [m
+[31m-module.exports = app;[m
+\ No newline at end of file[m
+[32m+[m[32mmodule.exports = app;[m
+[1mdiff --git a/backend/scripts/create-admin.js b/backend/scripts/create-admin.js[m
+[1mnew file mode 100644[m
+[1mindex 0000000..9fcb87d[m
+[1m--- /dev/null[m
+[1m+++ b/backend/scripts/create-admin.js[m
+[36m@@ -0,0 +1,41 @@[m
+[32m+[m[32mrequire('dotenv').config();[m
+[32m+[m
+[32m+[m[32mconst bcrypt = require('bcrypt');[m
+[32m+[m[32mconst db = require('../src/database/connection');[m
+[32m+[m
+[32m+[m[32masync function main() {[m
+[32m+[m[32m  const [email, password, name = 'Super Admin', role = 'root'] = process.argv.slice(2);[m
+[32m+[m[32m  if (!email || !password) {[m
+[32m+[m[32m    console.error('Uso: node scripts/create-admin.js <email> <senha> [nome] [papel]');[m
+[32m+[m[32m    process.exitCode = 1;[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  if (password.length < 8) {[m
+[32m+[m[32m    console.error('A senha deve ter pelo menos 8 caracteres.');[m
+[32m+[m[32m    process.exitCode = 1;[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  const [roles] = await db.execute('SELECT id_role FROM roles WHERE LOWER(name_role) = LOWER(?) LIMIT 1', [role]);[m
+[32m+[m[32m  if (!roles[0]) {[m
+[32m+[m[32m    console.error(`Papel não encontrado: ${role}. Insira os papéis na tabela roles antes de continuar.`);[m
+[32m+[m[32m    process.exitCode = 1;[m
+[32m+[m[32m    return;[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  const hash = await bcrypt.hash(password, 12);[m
+[32m+[m[32m  await db.execute([m
+[32m+[m[32m    'INSERT INTO users (name, email, password, phone, status, role_id) VALUES (?, ?, ?, ?, 1, ?)',[m
+[32m+[m[32m    [name.trim(), email.trim(), hash, 'Não informado', roles[0].id_role],[m
+[32m+[m[32m  );[m
+[32m+[m[32m  console.log(`Administrador criado: ${email} (${role})`);[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mmain()[m
+[32m+[m[32m  .catch((error) => {[m
+[32m+[m[32m    console.error('Não foi possível criar o administrador:', error.message);[m
+[32m+[m[32m    process.exitCode = 1;[m
+[32m+[m[32m  })[m
+[32m+[m[32m  .finally(async () => {[m
+[32m+[m[32m    try { await db.end(); } catch (_) { /* conexão pode não ter sido aberta */ }[m
+[32m+[m[32m  });[m
+[1mdiff --git a/backend/server.js b/backend/server.js[m
+[1mindex d70ac0a..4d95b63 100644[m
+[1m--- a/backend/server.js[m
+[1m+++ b/backend/server.js[m
+[36m@@ -1,9 +1,8 @@[m
+[31m-const app = require('./app');[m
+[31m-require('./src/database/connection.js');[m
+[31m-require('dotenv').config();[m
+[31m-[m
+[31m-const PORT = process.env.PORT || 6000;[m
+[31m-[m
+[31m-app.listen(PORT, () => {[m
+[31m-    console.log(`Servidor rodando em http://localhost:${PORT}`);[m
+[31m-});[m
+\ No newline at end of file[m
+[32m+[m[32mrequire('dotenv').config();[m
+[32m+[m
+[32m+[m[32mconst app = require('./app');[m
+[32m+[m[32mconst PORT = Number(process.env.PORT || 6000);[m
+[32m+[m
+[32m+[m[32mapp.listen(PORT, () => {[m
+[32m+[m[32m  console.log(`Servidor rodando em http://localhost:${PORT}`);[m
+[32m+[m[32m});[m
+[1mdiff --git a/backend/src/database/connection.js b/backend/src/database/connection.js[m
+[1mindex 6242817..545f246 100644[m
+[1m--- a/backend/src/database/connection.js[m
+[1m+++ b/backend/src/database/connection.js[m
+[36m@@ -1,27 +1,30 @@[m
+[31m-const mysql = require('mysql2/promise');[m
+ require('dotenv').config();[m
+ [m
+[32m+[m[32mconst mysql = require('mysql2/promise');[m
+[32m+[m
+ const pool = mysql.createPool({[m
+   host: process.env.DB_HOST,[m
+   user: process.env.DB_USER,[m
+   password: process.env.DB_PASSWORD,[m
+   database: process.env.DB_NAME,[m
+[31m-  port: process.env.DB_PORT,[m
+[32m+[m[32m  port: Number(process.env.DB_PORT || 3306),[m
+   waitForConnections: true,[m
+[31m-  connectionLimit: 10,[m
+[31m-  queueLimit: 0[m
+[32m+[m[32m  connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 10),[m
+[32m+[m[32m  queueLimit: 0,[m
+[32m+[m[32m  charset: 'utf8mb4',[m
+[32m+[m[32m  timezone: 'Z',[m
+ });[m
+ [m
+ async function testConnection() {[m
+   try {[m
+     const connection = await pool.getConnection();[m
+[31m-    console.log('✅ Conectado ao MySQL com sucesso!');[m
+[32m+[m[32m    console.log('Conectado ao MySQL com sucesso!');[m
+     connection.release();[m
+   } catch (error) {[m
+[31m-    console.error('❌ Erro ao conectar ao MySQL:', error.message);[m
+[32m+[m[32m    console.error('Erro ao conectar ao MySQL:', error.message);[m
+   }[m
+ }[m
+ [m
+ testConnection();[m
+ [m
+[31m-module.exports = pool;[m
+\ No newline at end of file[m
+[32m+[m[32mmodule.exports = pool;[m
+[1mdiff --git a/backend/src/database/query.sql b/backend/src/database/query.sql[m
+[1mindex e23d232..42ea0f2 100644[m
+[1m--- a/backend/src/database/query.sql[m
+[1m+++ b/backend/src/database/query.sql[m
+[36m@@ -53,11 +53,13 @@[m [mINSERT INTO[m
+     main ([m
+         title,[m
+         subtitle,[m
+[32m+[m[32m        page_key,[m
+         id_user[m
+     )[m
+ VALUES ([m
+         "Studio Orofacial",[m
+         "Conheça mais sobre nosso ambiente",[m
+[32m+[m[32m        "home",[m
+         1[m
+     );[m
+ [m
+[36m@@ -65,26 +67,31 @@[m [mINSERT INTO[m
+     main ([m
+         title,[m
+         subtitle,[m
+[32m+[m[32m        page_key,[m
+         id_user[m
+     )[m
+ VALUES ([m
+         "Studio Orofacial",[m
+         "Conheça mais sobre nosso ambiente",[m
+[32m+[m[32m        "home",[m
+         1[m
+     ),[m
+     ([m
+         "Catálogo de serviços",[m
+         "Conheça mais nossos procedimentos",[m
+[32m+[m[32m        "catalogo",[m
+         1[m
+     ),[m
+     ([m
+         "Entre em Contato",[m
+         "Responderemos o mais breve possível",[m
+[32m+[m[32m        "contato",[m
+         1[m
+     ),[m
+     ([m
+         "Sobre o Studio Orofacial",[m
+         "Conheça nossa história, missão e equipe de especialistas",[m
+[32m+[m[32m        "sobre",[m
+         1[m
+     );[m
+ [m
+[1mdiff --git a/backend/src/routes/cmsRoutes.js b/backend/src/routes/cmsRoutes.js[m
+[1mnew file mode 100644[m
+[1mindex 0000000..7fa9fa3[m
+[1m--- /dev/null[m
+[1m+++ b/backend/src/routes/cmsRoutes.js[m
+[36m@@ -0,0 +1,455 @@[m
+[32m+[m[32mconst crypto = require('node:crypto');[m
+[32m+[m[32mconst bcrypt = require('bcrypt');[m
+[32m+[m[32mconst jwt = require('jsonwebtoken');[m
+[32m+[m[32mconst express = require('express');[m
+[32m+[m[32mconst db = require('../database/connection');[m
+[32m+[m
+[32m+[m[32mconst router = express.Router();[m
+[32m+[m[32mconst SESSION_COOKIE = 'cms_token';[m
+[32m+[m[32mconst JWT_SECRET = process.env.JWT_SECRET || 'troque-esta-chave-em-producao';[m
+[32m+[m[32mconst SESSION_TTL_SECONDS = 8 * 60 * 60;[m
+[32m+[m
+[32m+[m[32m// O frontend usa estes nomes; os valores são as colunas reais do schema main-v2.[m
+[32m+[m[32mconst ENTITIES = {[m
+[32m+[m[32m  home_main: {[m
+[32m+[m[32m    table: 'main', primaryKey: 'id_main', pageKey: 'home',[m
+[32m+[m[32m    fields: { home_Titulo: 'title', home_subtitulo: 'subtitle' },[m
+[32m+[m[32m    required: ['title', 'subtitle'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  sobre_main: {[m
+[32m+[m[32m    table: 'main', primaryKey: 'id_main', pageKey: 'sobre',[m
+[32m+[m[32m    fields: { sobre_Titulo: 'title', sobre_subtitulo: 'subtitle' },[m
+[32m+[m[32m    required: ['title', 'subtitle'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  catalogo_main: {[m
+[32m+[m[32m    table: 'main', primaryKey: 'id_main', pageKey: 'catalogo',[m
+[32m+[m[32m    fields: { catalogo_Titulo: 'title', catalogo_subtitulo: 'subtitle' },[m
+[32m+[m[32m    required: ['title', 'subtitle'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  contato_main: {[m
+[32m+[m[32m    table: 'main', primaryKey: 'id_main', pageKey: 'contato',[m
+[32m+[m[32m    fields: { contato_titulo: 'title', contato_subtitulo: 'subtitle' },[m
+[32m+[m[32m    required: ['title', 'subtitle'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  home_carousel: {[m
+[32m+[m[32m    table: 'home_carousel', primaryKey: 'id_carousel',[m
+[32m+[m[32m    fields: { Image_Titulo: 'title', Image_Descricao: 'description', Image_Backgroud: 'background_image' },[m
+[32m+[m[32m    required: ['title', 'background_image'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  home_info: {[m
+[32m+[m[32m    table: 'home_info', primaryKey: 'id_info',[m
+[32m+[m[32m    fields: { info_texto: 'text', info_image: 'image' },[m
+[32m+[m[32m    required: ['text', 'image'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  historia: {[m
+[32m+[m[32m    table: 'about_history', primaryKey: 'id_history',[m
+[32m+[m[32m    fields: { Historia_titulo: 'title', Historia_texto: 'text', Historia_Image: 'image' },[m
+[32m+[m[32m    required: ['title', 'text', 'image'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  principios: {[m
+[32m+[m[32m    table: 'about_principles', primaryKey: 'id_principle',[m
+[32m+[m[32m    fields: { principios_titulo: 'title', principios_texto: 'text', principios_icone: 'icon' },[m
+[32m+[m[32m    required: ['title', 'text'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  equipe: {[m
+[32m+[m[32m    table: 'about_team', primaryKey: 'id_team',[m
+[32m+[m[32m    fields: { equipe_especialista: 'specialist', equipe_universidade: 'university', equipe_formacao: 'education', equipe_image: 'image' },[m
+[32m+[m[32m    required: ['specialist', 'university', 'education', 'image'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  diferenciais: {[m
+[32m+[m[32m    table: 'about_differentials', primaryKey: 'id_differential',[m
+[32m+[m[32m    fields: { Diferenciais_descricao: 'description' },[m
+[32m+[m[32m    required: ['description'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  item_catalogo: {[m
+[32m+[m[32m    table: 'catalog_item', primaryKey: 'id_item',[m
+[32m+[m[32m    fields: { item_catalogo_titulo: 'title', item_catalogo_descricao_curta: 'short_description', item_catalogo_descricao_modal: 'modal_description' },[m
+[32m+[m[32m    required: ['title', 'short_description'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  mensagem: {[m
+[32m+[m[32m    table: 'contact_message', primaryKey: 'id_message',[m
+[32m+[m[32m    fields: { mensagem_nome: 'name', mensagem_email: 'email', mensagem_texto: 'message' },[m
+[32m+[m[32m    required: ['name', 'email', 'message'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  localizacao: {[m
+[32m+[m[32m    table: 'contact_location', primaryKey: 'id_location',[m
+[32m+[m[32m    fields: { localizacao_maps: 'maps_url', localizacao_endereco: 'address' },[m
+[32m+[m[32m    required: ['address'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  contato_info: {[m
+[32m+[m[32m    table: 'contact_info', primaryKey: 'id_info',[m
+[32m+[m[32m    fields: { contato_info_telefone: 'phone', contato_info_whatsapp: 'whatsapp', contato_info_texto_atendimento: 'service_text' },[m
+[32m+[m[32m    required: ['whatsapp', 'service_text'],[m
+[32m+[m[32m  },[m
+[32m+[m[32m};[m
+[32m+[m
+[32m+[m[32mconst ROLE_ALIASES = {[m
+[32m+[m[32m  super: ['root', 'super', 'super admin', 'superadmin'],[m
+[32m+[m[32m  admin: ['admin', 'administrator', 'administrador', 'secretaria'],[m
+[32m+[m[32m  editor: ['editor'],[m
+[32m+[m[32m  viewer: ['viewer', 'visualizador'],[m
+[32m+[m[32m};[m
+[32m+[m
+[32m+[m[32mfunction quoteIdentifier(identifier) {[m
+[32m+[m[32m  return `\`${String(identifier).replace(/`/g, '``')}\``;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction parseCookies(header = '') {[m
+[32m+[m[32m  return header.split(';').reduce((cookies, item) => {[m
+[32m+[m[32m    const index = item.indexOf('=');[m
+[32m+[m[32m    if (index < 0) return cookies;[m
+[32m+[m[32m    cookies[item.slice(0, index).trim()] = decodeURIComponent(item.slice(index + 1).trim());[m
+[32m+[m[32m    return cookies;[m
+[32m+[m[32m  }, {});[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction tokenFromRequest(req) {[m
+[32m+[m[32m  const authorization = req.get('authorization');[m
+[32m+[m[32m  if (authorization && authorization.startsWith('Bearer ')) return authorization.slice(7).trim();[m
+[32m+[m[32m  return parseCookies(req.headers.cookie)[SESSION_COOKIE];[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction roleSlug(roleName = '') {[m
+[32m+[m[32m  const name = roleName.trim().toLowerCase();[m
+[32m+[m[32m  return Object.entries(ROLE_ALIASES).find(([, aliases]) => aliases.includes(name))?.[0] || name || 'viewer';[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction publicUser(user) {[m
+[32m+[m[32m  const role = roleSlug(user.name_role);[m
+[32m+[m[32m  return {[m
+[32m+[m[32m    _id: user.id_user,[m
+[32m+[m[32m    admin_nome: user.name || '',[m
+[32m+[m[32m    admin_email: user.email,[m
+[32m+[m[32m    admin_usuario: user.email,[m
+[32m+[m[32m    admin_perfil: role,[m
+[32m+[m[32m    admin_status: user.status ? 'active' : 'inactive',[m
+[32m+[m[32m    _created: user.created_at,[m
+[32m+[m[32m  };[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction isBcryptHash(value = '') {[m
+[32m+[m[32m  return /^\$2[aby]?\$\d{2}\$/.test(value);[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32masync function findUserById(id) {[m
+[32m+[m[32m  const [rows] = await db.execute([m
+[32m+[m[32m    `SELECT u.id_user, u.name, u.email, u.password, u.phone, u.status, u.created_at, r.name_role[m
+[32m+[m[32m       FROM users u INNER JOIN roles r ON r.id_role = u.role_id[m
+[32m+[m[32m      WHERE u.id_user = ? LIMIT 1`,[m
+[32m+[m[32m    [id],[m
+[32m+[m[32m  );[m
+[32m+[m[32m  return rows[0] || null;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32masync function findUserByToken(token) {[m
+[32m+[m[32m  if (!token) return null;[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const payload = jwt.verify(token, JWT_SECRET);[m
+[32m+[m[32m    const [rows] = await db.execute([m
+[32m+[m[32m      `SELECT u.id_user, u.name, u.email, u.password, u.phone, u.status, u.created_at, r.name_role[m
+[32m+[m[32m         FROM tokens t INNER JOIN users u ON u.id_user = t.id_user INNER JOIN roles r ON r.id_role = u.role_id[m
+[32m+[m[32m        WHERE t.token = ? AND t.expires_at > NOW() AND u.status = 1 LIMIT 1`,[m
+[32m+[m[32m      [token],[m
+[32m+[m[32m    );[m
+[32m+[m[32m    if (!rows[0] || Number(rows[0].id_user) !== Number(payload.sub)) return null;[m
+[32m+[m[32m    return rows[0];[m
+[32m+[m[32m  } catch (_) {[m
+[32m+[m[32m    return null;[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32masync function requireAuth(req, res, next) {[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const user = await findUserByToken(tokenFromRequest(req));[m
+[32m+[m[32m    if (!user) return res.status(401).json({ error: 'Sessão inválida ou expirada.' });[m
+[32m+[m[32m    req.user = user;[m
+[32m+[m[32m    next();[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    next(error);[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction requireContentWrite(req, res, next) {[m
+[32m+[m[32m  if (roleSlug(req.user.name_role) === 'viewer') return res.status(403).json({ error: 'O perfil atual não pode alterar conteúdo.' });[m
+[32m+[m[32m  next();[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction requireSuper(req, res, next) {[m
+[32m+[m[32m  if (roleSlug(req.user.name_role) !== 'super') return res.status(403).json({ error: 'Apenas Super Admin pode gerir administradores.' });[m
+[32m+[m[32m  next();[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction getEntity(name) {[m
+[32m+[m[32m  return ENTITIES[name] || null;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction selectFields(entity) {[m
+[32m+[m[32m  const contentFields = Object.entries(entity.fields)[m
+[32m+[m[32m    .map(([apiName, dbName]) => `${quoteIdentifier(dbName)} AS ${quoteIdentifier(apiName)}`)[m
+[32m+[m[32m    .join(', ');[m
+[32m+[m[32m  return `${quoteIdentifier(entity.primaryKey)} AS _id, \`created_at\` AS _created${contentFields ? `, ${contentFields}` : ''}`;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction valuesFromBody(entity, body = {}) {[m
+[32m+[m[32m  const values = {};[m
+[32m+[m[32m  Object.entries(entity.fields).forEach(([apiName, dbName]) => {[m
+[32m+[m[32m    if (!Object.prototype.hasOwnProperty.call(body, apiName)) return;[m
+[32m+[m[32m    values[dbName] = typeof body[apiName] === 'string' ? body[apiName].trim() : body[apiName];[m
+[32m+[m[32m  });[m
+[32m+[m[32m  return values;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction validate(entity, values) {[m
+[32m+[m[32m  const missing = entity.required.filter((field) => values[field] === undefined || values[field] === null || values[field] === '');[m
+[32m+[m[32m  if (missing.length) {[m
+[32m+[m[32m    const error = new Error(`Campos obrigatórios: ${missing.join(', ')}`);[m
+[32m+[m[32m    error.statusCode = 400;[m
+[32m+[m[32m    throw error;[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32masync function listEntity(entity) {[m
+[32m+[m[32m  const where = entity.pageKey ? ' WHERE page_key = ?' : '';[m
+[32m+[m[32m  const params = entity.pageKey ? [entity.pageKey] : [];[m
+[32m+[m[32m  const [rows] = await db.execute([m
+[32m+[m[32m    `SELECT ${selectFields(entity)} FROM ${quoteIdentifier(entity.table)}${where} ORDER BY ${quoteIdentifier(entity.primaryKey)} DESC`,[m
+[32m+[m[32m    params,[m
+[32m+[m[32m  );[m
+[32m+[m[32m  return rows;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32masync function insertEntity(entity, body, userId) {[m
+[32m+[m[32m  const values = valuesFromBody(entity, body);[m
+[32m+[m[32m  validate(entity, values);[m
+[32m+[m[32m  const columns = Object.keys(values);[m
+[32m+[m[32m  const params = Object.values(values);[m
+[32m+[m[32m  if (entity.pageKey) {[m
+[32m+[m[32m    columns.push('page_key');[m
+[32m+[m[32m    params.push(entity.pageKey);[m
+[32m+[m[32m  }[m
+[32m+[m[32m  if (userId) {[m
+[32m+[m[32m    columns.push('id_user');[m
+[32m+[m[32m    params.push(userId);[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const [result] = await db.execute([m
+[32m+[m[32m    `INSERT INTO ${quoteIdentifier(entity.table)} (${columns.map(quoteIdentifier).join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`,[m
+[32m+[m[32m    params,[m
+[32m+[m[32m  );[m
+[32m+[m[32m  return result.insertId;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32masync function updateEntity(entity, id, body) {[m
+[32m+[m[32m  const values = valuesFromBody(entity, body);[m
+[32m+[m[32m  validate(entity, values);[m
+[32m+[m[32m  const columns = Object.keys(values);[m
+[32m+[m[32m  if (!columns.length) {[m
+[32m+[m[32m    const error = new Error('Nenhum campo válido para atualizar.');[m
+[32m+[m[32m    error.statusCode = 400;[m
+[32m+[m[32m    throw error;[m
+[32m+[m[32m  }[m
+[32m+[m[32m  const [result] = await db.execute([m
+[32m+[m[32m    `UPDATE ${quoteIdentifier(entity.table)} SET ${columns.map((column) => `${quoteIdentifier(column)} = ?`).join(', ')} WHERE ${quoteIdentifier(entity.primaryKey)} = ?${entity.pageKey ? ' AND page_key = ?' : ''}`,[m
+[32m+[m[32m    [...Object.values(values), id, ...(entity.pageKey ? [entity.pageKey] : [])],[m
+[32m+[m[32m  );[m
+[32m+[m[32m  if (!result.affectedRows) {[m
+[32m+[m[32m    const error = new Error('Registro não encontrado.');[m
+[32m+[m[32m    error.statusCode = 404;[m
+[32m+[m[32m    throw error;[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32masync function deleteEntity(entity, id) {[m
+[32m+[m[32m  const [result] = await db.execute([m
+[32m+[m[32m    `DELETE FROM ${quoteIdentifier(entity.table)} WHERE ${quoteIdentifier(entity.primaryKey)} = ?${entity.pageKey ? ' AND page_key = ?' : ''}`,[m
+[32m+[m[32m    [id, ...(entity.pageKey ? [entity.pageKey] : [])],[m
+[32m+[m[32m  );[m
+[32m+[m[32m  if (!result.affectedRows) {[m
+[32m+[m[32m    const error = new Error('Registro não encontrado.');[m
+[32m+[m[32m    error.statusCode = 404;[m
+[32m+[m[32m    throw error;[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32masync function getRoleId(slug) {[m
+[32m+[m[32m  const aliases = ROLE_ALIASES[slug] || [slug];[m
+[32m+[m[32m  const [rows] = await db.execute([m
+[32m+[m[32m    `SELECT id_role FROM roles WHERE LOWER(name_role) IN (${aliases.map(() => '?').join(', ')}) ORDER BY id_role LIMIT 1`,[m
+[32m+[m[32m    aliases,[m
+[32m+[m[32m  );[m
+[32m+[m[32m  if (rows[0]) return rows[0].id_role;[m
+[32m+[m[32m  const [created] = await db.execute('INSERT INTO roles (name_role) VALUES (?)', [slug]);[m
+[32m+[m[32m  return created.insertId;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32masync function listAdmins() {[m
+[32m+[m[32m  const [rows] = await db.query([m
+[32m+[m[32m    `SELECT u.id_user, u.name, u.email, u.status, u.created_at, r.name_role[m
+[32m+[m[32m       FROM users u INNER JOIN roles r ON r.id_role = u.role_id ORDER BY u.id_user DESC`,[m
+[32m+[m[32m  );[m
+[32m+[m[32m  return rows.map(publicUser);[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mrouter.get('/health', (req, res) => res.json({ ok: true }));[m
+[32m+[m
+[32m+[m[32mrouter.post('/auth/login', async (req, res, next) => {[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const login = String(req.body?.login || '').trim();[m
+[32m+[m[32m    const password = String(req.body?.password || '');[m
+[32m+[m[32m    if (!login || !password) return res.status(400).json({ error: 'Login e senha são obrigatórios.' });[m
+[32m+[m[32m    const [rows] = await db.execute([m
+[32m+[m[32m      `SELECT u.id_user, u.name, u.email, u.password, u.phone, u.status, u.created_at, r.name_role[m
+[32m+[m[32m         FROM users u INNER JOIN roles r ON r.id_role = u.role_id[m
+[32m+[m[32m        WHERE (u.email = ? OR u.name = ?) AND u.status = 1 LIMIT 1`,[m
+[32m+[m[32m      [login, login],[m
+[32m+[m[32m    );[m
+[32m+[m[32m    const user = rows[0];[m
+[32m+[m[32m    const valid = user && (isBcryptHash(user.password) ? await bcrypt.compare(password, user.password) : user.password === password);[m
+[32m+[m[32m    if (!valid) return res.status(401).json({ error: 'Usuário ou senha incorretos.' });[m
+[32m+[m
+[32m+[m[32m    if (!isBcryptHash(user.password)) {[m
+[32m+[m[32m      const migratedPassword = await bcrypt.hash(password, 12);[m
+[32m+[m[32m      await db.execute('UPDATE users SET password = ? WHERE id_user = ?', [migratedPassword, user.id_user]);[m
+[32m+[m[32m    }[m
+[32m+[m[32m    const token = jwt.sign({ sub: user.id_user }, JWT_SECRET, { expiresIn: SESSION_TTL_SECONDS });[m
+[32m+[m[32m    await db.execute([m
+[32m+[m[32m      `INSERT INTO tokens (token, expires_at, id_user) VALUES (?, DATE_ADD(NOW(), INTERVAL 8 HOUR), ?)`,[m
+[32m+[m[32m      [token, user.id_user],[m
+[32m+[m[32m    );[m
+[32m+[m[32m    res.cookie(SESSION_COOKIE, token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: SESSION_TTL_SECONDS * 1000, path: '/' });[m
+[32m+[m[32m    res.json({ token, user: publicUser(user) });[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    next(error);[m
+[32m+[m[32m  }[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mrouter.post('/auth/logout', async (req, res, next) => {[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const token = tokenFromRequest(req);[m
+[32m+[m[32m    if (token) await db.execute('DELETE FROM tokens WHERE token = ?', [token]);[m
+[32m+[m[32m    res.clearCookie(SESSION_COOKIE, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });[m
+[32m+[m[32m    res.json({ ok: true });[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    next(error);[m
+[32m+[m[32m  }[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mrouter.get('/auth/me', requireAuth, (req, res) => res.json({ user: publicUser(req.user) }));[m
+[32m+[m
+[32m+[m[32mrouter.get('/cms', requireAuth, async (req, res, next) => {[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const entries = await Promise.all(Object.entries(ENTITIES).map(async ([name, entity]) => [name, await listEntity(entity)]));[m
+[32m+[m[32m    res.json(Object.fromEntries(entries));[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    next(error);[m
+[32m+[m[32m  }[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mrouter.get('/cms/:entity', async (req, res, next) => {[m
+[32m+[m[32m  const entity = getEntity(req.params.entity);[m
+[32m+[m[32m  if (!entity) return res.status(404).json({ error: 'Entidade do CMS não encontrada.' });[m
+[32m+[m[32m  if (req.params.entity === 'mensagem') return requireAuth(req, res, async (authError) => {[m
+[32m+[m[32m    if (authError) return next(authError);[m
+[32m+[m[32m    try { res.json(await listEntity(entity)); } catch (error) { next(error); }[m
+[32m+[m[32m  });[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    res.json(await listEntity(entity));[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    next(error);[m
+[32m+[m[32m  }[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mrouter.post('/contact/messages', async (req, res, next) => {[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const id = await insertEntity(ENTITIES.mensagem, {[m
+[32m+[m[32m      mensagem_nome: req.body?.nome,[m
+[32m+[m[32m      mensagem_email: req.body?.email,[m
+[32m+[m[32m      mensagem_texto: req.body?.mensagem,[m
+[32m+[m[32m    }, null);[m
+[32m+[m[32m    res.status(201).json({ id_message: id, message: 'Mensagem enviada com sucesso.' });[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    next(error);[m
+[32m+[m[32m  }[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mrouter.post('/cms/:entity', requireAuth, requireContentWrite, async (req, res, next) => {[m
+[32m+[m[32m  const entity = getEntity(req.params.entity);[m
+[32m+[m[32m  if (!entity) return res.status(404).json({ error: 'Entidade do CMS não encontrada.' });[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const id = await insertEntity(entity, req.body, req.user.id_user);[m
+[32m+[m[32m    const rows = await listEntity(entity);[m
+[32m+[m[32m    res.status(201).json(rows.find((row) => String(row._id) === String(id)) || { _id: id });[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    next(error);[m
+[32m+[m[32m  }[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mrouter.put('/cms/:entity/:id', requireAuth, requireContentWrite, async (req, res, next) => {[m
+[32m+[m[32m  const entity = getEntity(req.params.entity);[m
+[32m+[m[32m  if (!entity) return res.status(404).json({ error: 'Entidade do CMS não encontrada.' });[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    await updateEntity(entity, req.params.id, req.body);[m
+[32m+[m[32m    const rows = await listEntity(entity);[m
+[32m+[m[32m    res.json(rows.find((row) => String(row._id) === String(req.params.id)) || { _id: req.params.id });[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    next(error);[m
+[32m+[m[32m  }[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mrouter.delete('/cms/:entity/:id', requireAuth, requireContentWrite, async (req, res, next) => {[m
+[32m+[m[32m  const entity = getEntity(req.params.entity);[m
+[32m+[m[32m  if (!entity) return res.status(404).json({ error: 'Entidade do CMS não encontrada.' });[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    await deleteEntity(entity, req.params.id);[m
+[32m+[m[32m    res.status(204).end();[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    next(error);[m
+[32m+[m[32m  }[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mrouter.get('/admins', requireAuth, requireSuper, async (req, res, next) => {[m
+[32m+[m[32m  try { res.json(await listAdmins()); } catch (error) { next(error); }[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mrouter.post('/admins', requireAuth, requireSuper, async (req, res, next) => {[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const { nome, email, perfil = 'admin', status = 'active', senha } = req.body || {};[m
+[32m+[m[32m    if (!nome || !email || !senha) return res.status(400).json({ error: 'Nome, e-mail e senha são obrigatórios.' });[m
+[32m+[m[32m    if (senha.length < 8) return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres.' });[m
+[32m+[m[32m    const roleId = await getRoleId(perfil);[m
+[32m+[m[32m    const [result] = await db.execute([m
+[32m+[m[32m      `INSERT INTO users (name, email, password, phone, status, role_id) VALUES (?, ?, ?, ?, ?, ?)`,[m
+[32m+[m[32m      [nome.trim(), email.trim(), await bcrypt.hash(senha, 12), 'Não informado', status === 'active' ? 1 : 0, roleId],[m
+[32m+[m[32m    );[m
+[32m+[m[32m    res.status(201).json({ _id: result.insertId });[m
+[32m+[m[32m  } catch (error) { next(error); }[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mrouter.put('/admins/:id', requireAuth, requireSuper, async (req, res, next) => {[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const { nome, email, perfil = 'admin', status = 'active', senha } = req.body || {};[m
+[32m+[m[32m    if (!nome || !email) return res.status(400).json({ error: 'Nome e e-mail são obrigatórios.' });[m
+[32m+[m[32m    const roleId = await getRoleId(perfil);[m
+[32m+[m[32m    const params = [nome.trim(), email.trim(), roleId, status === 'active' ? 1 : 0];[m
+[32m+[m[32m    let passwordSql = '';[m
+[32m+[m[32m    if (senha) {[m
+[32m+[m[32m      if (senha.length < 8) return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres.' });[m
+[32m+[m[32m      passwordSql = ', password = ?';[m
+[32m+[m[32m      params.push(await bcrypt.hash(senha, 12));[m
+[32m+[m[32m    }[m
+[32m+[m[32m    params.push(req.params.id);[m
+[32m+[m[32m    const [result] = await db.execute(`UPDATE users SET name = ?, email = ?, role_id = ?, status = ?${passwordSql} WHERE id_user = ?`, params);[m
+[32m+[m[32m    if (!result.affectedRows) return res.status(404).json({ error: 'Administrador não encontrado.' });[m
+[32m+[m[32m    res.status(204).end();[m
+[32m+[m[32m  } catch (error) { next(error); }[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mrouter.delete('/admins/:id', requireAuth, requireSuper, async (req, res, next) => {[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    if (String(req.params.id) === String(req.user.id_user)) return res.status(400).json({ error: 'Não é possível excluir a própria conta.' });[m
+[32m+[m[32m    const [result] = await db.execute('DELETE FROM users WHERE id_user = ?', [req.params.id]);[m
+[32m+[m[32m    if (!result.affectedRows) return res.status(404).json({ error: 'Administrador não encontrado.' });[m
+[32m+[m[32m    res.status(204).end();[m
+[32m+[m[32m  } catch (error) { next(error); }[m
+[32m+[m[32m});[m
+[32m+[m
+[32m+[m[32mmodule.exports = router;[m
+[1mdiff --git a/frontend/admin.html b/frontend/admin.html[m
+[1mindex cfa5a2a..6406246 100644[m
+[1m--- a/frontend/admin.html[m
+[1m+++ b/frontend/admin.html[m
+[36m@@ -9,8 +9,6 @@[m
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">[m
+ <!-- Bootstrap Icons -->[m
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">[m
+[31m-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>[m
+[31m-<script src="js/admin.js"></script>[m
+ <style>[m
+ /* ============================================================[m
+    PALETA STUDIO OROFACIAL[m
+[36m@@ -684,7 +682,8 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="home-tab-main" class="tab-pane active">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-pin-map-fill"></i> Home Main <span class="badge-table ms-2">home_main</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'home_main')">[m
+[32m+[m[32m              <form id="form-home_main" onsubmit="handleSubmit(event,'home_main')">[m
+[32m+[m[32m                <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+                   <div class="col-12"><label class="form-label">home_Titulo</label><input type="text" class="form-control" name="home_Titulo" placeholder="Título principal"></div>[m
+                   <div class="col-12"><label class="form-label">home_subtitulo</label><input type="text" class="form-control" name="home_subtitulo" placeholder="Subtítulo"></div>[m
+[36m@@ -692,7 +691,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('home_main')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('home_main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -708,7 +707,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="home-tab-carousel" class="tab-pane">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-images"></i> Home Carousel <span class="badge-table ms-2">home_carousel</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'home_carousel')">[m
+[32m+[m[32m              <form id="form-home_carousel" onsubmit="handleSubmit(event,'home_carousel')">[m
+                 <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+                   <div class="col-md-6"><label class="form-label">Image_Titulo</label><input type="text" class="form-control" name="Image_Titulo" placeholder="Título do slide"></div>[m
+[36m@@ -718,7 +717,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('home_carousel')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('home_carousel')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -734,7 +733,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="home-tab-info" class="tab-pane">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-info-circle-fill"></i> Home Info <span class="badge-table ms-2">home_info</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'home_info')">[m
+[32m+[m[32m              <form id="form-home_info" onsubmit="handleSubmit(event,'home_info')">[m
+                 <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+                   <div class="col-md-6"><label class="form-label">info_image (URL)</label><input type="url" class="form-control" name="info_image" placeholder="https://..."></div>[m
+[36m@@ -743,7 +742,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('home_info')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('home_info')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -777,7 +776,8 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="sobre-tab-main" class="tab-pane active">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-pin-map-fill"></i> Sobre Main <span class="badge-table ms-2">sobre_main</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'sobre_main')">[m
+[32m+[m[32m              <form id="form-sobre_main" onsubmit="handleSubmit(event,'sobre_main')">[m
+[32m+[m[32m                <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+                   <div class="col-md-6"><label class="form-label">sobre_Titulo</label><input type="text" class="form-control" name="sobre_Titulo" placeholder="Título"></div>[m
+                   <div class="col-md-6"><label class="form-label">sobre_subtitulo</label><input type="text" class="form-control" name="sobre_subtitulo" placeholder="Subtítulo"></div>[m
+[36m@@ -785,7 +785,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('sobre_main')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('sobre_main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -800,7 +800,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="sobre-tab-historia" class="tab-pane">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-book-fill"></i> História <span class="badge-table ms-2">historia</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'historia')">[m
+[32m+[m[32m              <form id="form-historia" onsubmit="handleSubmit(event,'historia')">[m
+                 <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+                   <div class="col-md-6"><label class="form-label">Historia_titulo</label><input type="text" class="form-control" name="Historia_titulo" placeholder="Título"></div>[m
+[36m@@ -810,7 +810,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('historia')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('historia')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -825,7 +825,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="sobre-tab-principios" class="tab-pane">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-check-circle-fill"></i> Princípios <span class="badge-table ms-2">principios</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'principios')">[m
+[32m+[m[32m              <form id="form-principios" onsubmit="handleSubmit(event,'principios')">[m
+                 <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+                   <div class="col-md-6"><label class="form-label">principios_titulo</label><input type="text" class="form-control" name="principios_titulo" placeholder="Ex: Missão"></div>[m
+[36m@@ -835,7 +835,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('principios')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('principios')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -850,7 +850,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="sobre-tab-equipe" class="tab-pane">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-people-fill"></i> Equipe <span class="badge-table ms-2">equipe</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'equipe')">[m
+[32m+[m[32m              <form id="form-equipe" onsubmit="handleSubmit(event,'equipe')">[m
+                 <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+                   <div class="col-md-6"><label class="form-label">equipe_especialista</label><input type="text" class="form-control" name="equipe_especialista" placeholder="Nome"></div>[m
+[36m@@ -861,7 +861,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('equipe')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('equipe')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -876,7 +876,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="sobre-tab-diferenciais" class="tab-pane">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-star-fill"></i> Diferenciais <span class="badge-table ms-2">diferenciais</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'diferenciais')">[m
+[32m+[m[32m              <form id="form-diferenciais" onsubmit="handleSubmit(event,'diferenciais')">[m
+                 <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+                   <div class="col-12"><label class="form-label">Diferenciais_descricao</label><textarea class="form-control" name="Diferenciais_descricao" rows="3" placeholder="Descrição do diferencial..."></textarea></div>[m
+[36m@@ -884,7 +884,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('diferenciais')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('diferenciais')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -915,39 +915,18 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="catalogo-tab-main" class="tab-pane active">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-pin-map-fill"></i> Catálogo Main <span class="badge-table ms-2">catalogo_main</span></h2>[m
+[31m-              <form onsubmit="handleItemSubmit(event)" id="form-item-catalogo">[m
+[31m-                <input type="hidden" id="item-id" value="">[m
+[31m-                <div class="row g-3">[m
+[31m-                  <div class="col-md-6">[m
+[31m-                    <label class="form-label">item_catalogo_titulo</label>[m
+[31m-                    <input type="text" class="form-control" id="item-titulo" placeholder="Nome do produto/serviço" required>[m
+[31m-                  </div>[m
+[31m-                  <div class="col-md-6">[m
+[31m-                    <label class="form-label">item_catalogo_descricao_curta</label>[m
+[31m-                    <input type="text" class="form-control" id="item-desc-curta" placeholder="Descrição curta (card)" required>[m
+[31m-                  </div>[m
+[31m-                  <div class="col-12">[m
+[31m-                    <label class="form-label">item_catalogo_descricao_modal</label>[m
+[31m-                    <textarea class="form-control" id="item-desc-modal" rows="4" placeholder="Descrição completa (modal)..."></textarea>[m
+[31m-                  </div>[m
+[31m-                </div>[m
+[31m-                <div class="btn-row">[m
+[31m-                  <button type="submit" class="btn btn-roxo" id="item-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>[m
+[31m-                  <button type="button" class="btn btn-danger" onclick="deletarItemAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="button" class="btn btn-dourado" onclick="limparFormularioItem()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[31m-                </div>[m
+[31m-              </form>[m
+[31m-              <!-- <form onsubmit="handleSubmit(event,'catalogo_main')">[m
+[32m+[m[32m              <form id="form-catalogo_main" onsubmit="handleSubmit(event,'catalogo_main')">[m
+[32m+[m[32m                <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+[31m-                  <div class="col-md-6"><label class="form-label">catalogo_Titulo</label><input type="text" class="form-control" name="catalogo_Titulo" placeholder="Título"></div>[m
+[31m-                  <div class="col-md-6"><label class="form-label">contato_subtitulo</label><input type="text" class="form-control" name="contato_subtitulo" placeholder="Subtítulo"></div>[m
+[32m+[m[32m                  <div class="col-md-6"><label class="form-label">catalogo_Titulo</label><input type="text" class="form-control" name="catalogo_Titulo" placeholder="Título" required></div>[m
+[32m+[m[32m                  <div class="col-md-6"><label class="form-label">catalogo_subtitulo</label><input type="text" class="form-control" name="catalogo_subtitulo" placeholder="Subtítulo" required></div>[m
+                 </div>[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('catalogo_main')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('catalogo_main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+[31m-              </form> -->[m
+[32m+[m[32m              </form>[m
+             </div>[m
+             <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">catalogo_main</span></h2>[m
+               <div class="table-responsive"><table class="table table-bordered table-hover">[m
+[36m@@ -956,11 +935,10 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+               </table></div>[m
+             </div>[m
+           </div>[m
+[31m-[m
+           <div id="catalogo-tab-item" class="tab-pane">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-card-list"></i> Itens do Catálogo <span class="badge-table ms-2">item_catalogo</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'item_catalogo')">[m
+[32m+[m[32m              <form id="form-item_catalogo" onsubmit="handleSubmit(event,'item_catalogo')">[m
+                 <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+                   <div class="col-md-6"><label class="form-label">item_catalogo_titulo</label><input type="text" class="form-control" name="item_catalogo_titulo" placeholder="Nome do produto/serviço"></div>[m
+[36m@@ -970,7 +948,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('item_catalogo')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('item_catalogo')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -1002,7 +980,8 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="contato-tab-main" class="tab-pane active">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-pin-map-fill"></i> Contato Main <span class="badge-table ms-2">contato_main</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'contato_main')">[m
+[32m+[m[32m              <form id="form-contato_main" onsubmit="handleSubmit(event,'contato_main')">[m
+[32m+[m[32m                <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+                   <div class="col-md-6"><label class="form-label">contato_titulo</label><input type="text" class="form-control" name="contato_titulo" placeholder="Título"></div>[m
+                   <div class="col-md-6"><label class="form-label">contato_subtitulo</label><input type="text" class="form-control" name="contato_subtitulo" placeholder="Subtítulo"></div>[m
+[36m@@ -1010,7 +989,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('contato_main')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('contato_main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -1025,7 +1004,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="contato-tab-mensagem" class="tab-pane">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-chat-fill"></i> Mensagens <span class="badge-table ms-2">mensagem</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'mensagem')">[m
+[32m+[m[32m              <form id="form-mensagem" onsubmit="handleSubmit(event,'mensagem')">[m
+                 <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+                   <div class="col-md-6"><label class="form-label">mensagem_nome</label><input type="text" class="form-control" name="mensagem_nome" placeholder="Nome"></div>[m
+[36m@@ -1035,7 +1014,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('mensagem')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('mensagem')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -1050,16 +1029,16 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="contato-tab-localizacao" class="tab-pane">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-geo-alt-fill"></i> Localização <span class="badge-table ms-2">localizacao</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'localizacao')">[m
+[32m+[m[32m              <form id="form-localizacao" onsubmit="handleSubmit(event,'localizacao')">[m
+                 <input type="hidden" name="id" value="">[m
+[31m-                <div class="row g-3">[m
+[31m-                  <div class="col-12"><label class="form-label">localizacao_maps (URL embed)</label><input type="url" class="form-control" name="localizacao_maps" placeholder="https://maps.google.com/embed?..."></div>[m
+[32m+[m[32m                                <div class="row g-3">[m
+[32m+[m[32m                  <div class="col-12"><label class="form-label">localizacao_maps (URL embed)</label><input type="url" class="form-control" name="localizacao_maps" placeholder="https://maps.google.com/embed?..." /></div>[m
+                   <div class="col-12"><label class="form-label">localizacao_endereco</label><input type="text" class="form-control" name="localizacao_endereco" placeholder="Rua Exemplo, 123 — Bairro, Cidade - UF"></div>[m
+                 </div>[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('localizacao')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('localizacao')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -1074,10 +1053,10 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+           <div id="contato-tab-info" class="tab-pane">[m
+             <div class="admin-card">[m
+               <h2><i class="bi bi-telephone-fill"></i> Contato Info <span class="badge-table ms-2">contato_info</span></h2>[m
+[31m-              <form onsubmit="handleSubmit(event,'contato_info')">[m
+[32m+[m[32m              <form id="form-contato_info" onsubmit="handleSubmit(event,'contato_info')">[m
+                 <input type="hidden" name="id" value="">[m
+                 <div class="row g-3">[m
+[31m-                  <div class="col-12"><label class="form-label">localizacao_maps (URL embed)</label><input type="url" class="form-control" name="localizacao_maps" placeholder="https://maps.google.com/embed?..."></div>[m
+[32m+[m
+                   <div class="col-md-6"><label class="form-label">contato_info_telefone</label><input type="tel" class="form-control" name="contato_info_telefone" placeholder="(11) 4515-0556"></div>[m
+                   <div class="col-md-6"><label class="form-label">contato_info_whatsapp</label><input type="tel" class="form-control" name="contato_info_whatsapp" placeholder="(11) 97199-3704"></div>[m
+                   <div class="col-12"><label class="form-label">contato_info_texto_atendimento</label><textarea class="form-control" name="contato_info_texto_atendimento" placeholder="Ex: Seg a Sex das 9h às 18h"></textarea></div>[m
+[36m@@ -1085,7 +1064,7 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+                 <div class="btn-row">[m
+                   <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>[m
+                   <button type="button" class="btn btn-danger" onclick="confirmDelete('contato_info')"><i class="bi bi-trash me-1"></i>Deletar</button>[m
+[31m-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+[32m+[m[32m                  <button type="button" class="btn btn-dourado" onclick="resetContentForm('contato_info')"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>[m
+                 </div>[m
+               </form>[m
+             </div>[m
+[36m@@ -1249,392 +1228,6 @@[m [mtextarea.form-control { resize: vertical; min-height: 90px; }[m
+ <!-- Bootstrap JS -->[m
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>[m
+ [m
+[31m-<script>[m
+[31m-// ============================================================[m
+[31m-// STATE — banco em memória[m
+[31m-// ============================================================[m
+[31m-const DB = {};[m
+[31m-let currentUser = null;[m
+[31m-let deleteCtx   = null;[m
+[31m-let editCtx     = null;[m
+[31m-[m
+[31m-const bsDeleteModal = null; // inicializado depois do DOM[m
+[31m-let _bsDelete, _bsEdit;[m
+[31m-[m
+[31m-window.addEventListener('DOMContentLoaded', () => {[m
+[31m-  _bsDelete = new bootstrap.Modal(document.getElementById('modal-delete'));[m
+[31m-  _bsEdit   = new bootstrap.Modal(document.getElementById('modal-edit'));[m
+[31m-});[m
+[31m-[m
+[31m-function dbGet(t)        { return DB[t] || []; }[m
+[31m-function dbInsert(t, r)  { if (!DB[t]) DB[t] = []; r._id = Date.now(); DB[t].push(r); }[m
+[31m-function dbUpdate(t,id,d){ DB[t] = (DB[t]||[]).map(r => r._id==id ? {...r,...d} : r); }[m
+[31m-function dbDelete(t, id) { DB[t] = (DB[t]||[]).filter(r => r._id!=id); }[m
+[31m-[m
+[31m-// Seed super admin padrão[m
+[31m-DB['_admins'] = [{[m
+[31m-  _id:1, admin_nome:'Super Admin', admin_email:'super@admin.com',[m
+[31m-  admin_usuario:'superadmin', admin_senha:'Admin@123',[m
+[31m-  admin_perfil:'super', admin_status:'active',[m
+[31m-  _created: new Date().toLocaleDateString('pt-BR')[m
+[31m-}];[m
+[31m-[m
+[31m-const roleLabels = {[m
+[31m-  super:  { label:'Super Admin', cls:'role-super' },[m
+[31m-  admin:  { label:'Admin',       cls:'role-admin' },[m
+[31m-  editor: { label:'Editor',      cls:'role-editor' },[m
+[31m-  viewer: { label:'Visualizador',cls:'role-viewer' },[m
+[31m-};[m
+[31m-[m
+[31m-// ============================================================[m
+[31m-// AUTH[m
+[31m-// ============================================================[m
+[31m-function doLogin() {[m
+[31m-  const user = document.getElementById('login-user').value.trim();[m
+[31m-  const pass = document.getElementById('login-pass').value;[m
+[31m-  const found = (DB['_admins']||[]).find(a =>[m
+[31m-    (a.admin_usuario===user || a.admin_email===user) &&[m
+[31m-    a.admin_senha===pass && a.admin_status==='active'[m
+[31m-  );[m
+[31m-  if (!found) {[m
+[31m-    document.getElementById('login-error').style.display = 'block';[m
+[31m-    return;[m
+[31m-  }[m
+[31m-  document.getElementById('login-error').style.display = 'none';[m
+[31m-  currentUser = found;[m
+[31m-  document.getElementById('login-screen').style.display  = 'none';[m
+[31m-  document.getElementById('panel-screen').style.display  = 'flex';[m
+[31m-  document.getElementById('topbar-name').textContent   = found.admin_nome;[m
+[31m-  document.getElementById('topbar-role').textContent   = roleLabels[found.admin_perfil]?.label || found.admin_perfil;[m
+[31m-  document.getElementById('topbar-avatar').textContent = found.admin_nome.charAt(0).toUpperCase();[m
+[31m-  if (found.admin_perfil === 'super') {[m
+[31m-    document.getElementById('nav-admins').style.display = 'flex';[m
+[31m-  }[m
+[31m-}[m
+[31m-[m
+[31m-function doLogout() {[m
+[31m-  currentUser = null;[m
+[31m-  document.getElementById('panel-screen').style.display = 'none';[m
+[31m-  document.getElementById('login-screen').style.display = 'flex';[m
+[31m-  document.getElementById('login-user').value = '';[m
+[31m-  document.getElementById('login-pass').value = '';[m
+[31m-  document.getElementById('nav-admins').style.display = 'none';[m
+[31m-}[m
+[31m-[m
+[31m-// ============================================================[m
+[31m-// NAVIGATION[m
+[31m-// ============================================================[m
+[31m-function showPage(page, link) {[m
+[31m-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));[m
+[31m-  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));[m
+[31m-  document.getElementById('page-'+page).classList.add('active');[m
+[31m-  if (link) link.classList.add('active');[m
+[31m-  if (page === 'admins') { renderAdmins(); renderAdminStats(); }[m
+[31m-}[m
+[31m-[m
+[31m-// ============================================================[m
+[31m-// TABS[m
+[31m-// ============================================================[m
+[31m-function switchTab(link, page, tab) {[m
+[31m-  const parent = link.closest('.page');[m
+[31m-  parent.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));[m
+[31m-  parent.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));[m
+[31m-  link.classList.add('active');[m
+[31m-  document.getElementById(page+'-tab-'+tab).classList.add('active');[m
+[31m-}[m
+[31m-[m
+[31m-// ============================================================[m
+[31m-// FORM SUBMIT[m
+[31m-// ============================================================[m
+[31m-const schemas = {[m
+[31m-  home_main:     ['home_Titulo','home_subtitulo'],[m
+[31m-  home_carousel: ['Image_Titulo','Image_Descricao','Image_Backgroud'],[m
+[31m-  home_info:     ['info_texto','info_image'],[m
+[31m-  sobre_main:    ['sobre_Titulo','sobre_subtitulo'],[m
+[31m-  historia:      ['Historia_titulo','Historia_texto','Historia_Image'],[m
+[31m-  principios:    ['principios_titulo','principios_texto','principios_icone'],[m
+[31m-  equipe:        ['equipe_especialista','equipe_universidade','equipe_formacao','equipe_image'],[m
+[31m-  diferenciais:  ['Diferenciais_descricao'],[m
+[31m-  catalogo_main: ['catalogo_Titulo','contato_subtitulo'],[m
+[31m-  item_catalogo: ['item_catalogo_titulo','item_catalogo_descricao_curta','item_catalogo_descricao_modal'],[m
+[31m-  contato_main:  ['contato_titulo','contato_subtitulo'],[m
+[31m-  mensagem:      ['mensagem_nome','mensagem_email','mensagem_texto'],[m
+[31m-  localizacao:   ['localizacao_maps','localizacao_endereco'],[m
+[31m-  contato_info:  ['localizacao_maps','contato_info_telefone','contato_info_whatsapp','contato_info_texto_atendimento'],[m
+[31m-};[m
+[31m-[m
+[31m-function handleSubmit(e, table) {[m
+[31m-  e.preventDefault();[m
+[31m-  const form = e.target;[m
+[31m-  const data = Object.fromEntries(new FormData(form));[m
+[31m-  const id = data.id; delete data.id;[m
+[31m-  if (id) { dbUpdate(table, id, data); showToast('Registro atualizado!','success'); }[m
+[31m-  else    { dbInsert(table, data);     showToast('Registro inserido!','success'); }[m
+[31m-  form.reset();[m
+[31m-  renderTable(table);[m
+[31m-}[m
+[31m-[m
+[31m-function renderTable(table) {[m
+[31m-  const tbody  = document.getElementById('tb-'+table);[m
+[31m-  if (!tbody) return;[m
+[31m-  const rows   = dbGet(table);[m
+[31m-  const fields = schemas[table] || [];[m
+[31m-  if (!rows.length) {[m
+[31m-    tbody.innerHTML = `<tr><td colspan="${fields.length+2}" class="text-center text-muted py-3">Nenhum registro</td></tr>`;[m
+[31m-    return;[m
+[31m-  }[m
+[31m-  tbody.innerHTML = rows.map((r,i) => `[m
+[31m-    <tr>[m
+[31m-      <td>${i+1}</td>[m
+[31m-      ${fields.map(f=>`<td title="${r[f]||''}">${trunc(r[f]||'—',35)}</td>`).join('')}[m
+[31m-      <td>[m
+[31m-        <button class="btn-sm-roxo me-1" onclick="editarItem(${item.id_item})"><i class="bi bi-pencil-fill"></i> Editar</button>[m
+[31m-        // <button class="btn-sm-roxo me-1" onclick="openEdit('${table}',${r._id})"><i class="bi bi-pencil-fill"></i> Editar</button>[m
+[31m-        <button class="btn-sm-danger"    onclick="confirmDelete('${table}',${r._id})"><i class="bi bi-trash-fill"></i></button>[m
+[31m-      </td>[m
+[31m-    </tr>`).join('');[m
+[31m-}[m
+[31m-[m
+[31m-function trunc(s,n){ s=String(s); return s.length>n ? s.slice(0,n)+'…' : s; }[m
+[31m-[m
+[31m-// ============================================================[m
+[31m-// EDIT MODAL[m
+[31m-// ============================================================[m
+[31m-function openEdit(table, id) {[m
+[31m-  const row = dbGet(table).find(r=>r._id==id);[m
+[31m-  if (!row) return;[m
+[31m-  editCtx = { table, id };[m
+[31m-  const fields = schemas[table] || [];[m
+[31m-  document.getElementById('modal-edit-title').innerHTML = `<i class="bi bi-pencil-fill me-2"></i>Editar — ${table}`;[m
+[31m-  document.getElementById('modal-edit-body').innerHTML = `<div class="row g-3">${[m
+[31m-    fields.map(f=>`<div class="col-12">[m
+[31m-      <label class="form-label">${f}</label>[m
+[31m-      ${f.toLowerCase().includes('texto')||f.toLowerCase().includes('descricao')[m
+[31m-        ? `<textarea class="form-control" id="edit-${f}" rows="3">${row[f]||''}</textarea>`[m
+[31m-        : `<input type="text" class="form-control" id="edit-${f}" value="${row[f]||''}">`}[m
+[31m-    </div>`).join('')[m
+[31m-  }</div>`;[m
+[31m-  _bsEdit.show();[m
+[31m-}[m
+[31m-[m
+[31m-function saveEdit() {[m
+[31m-  if (!editCtx) return;[m
+[31m-  const fields = schemas[editCtx.table] || [];[m
+[31m-  const data = {};[m
+[31m-  fields.forEach(f => { const el=document.getElementById('edit-'+f); if(el) data[f]=el.value; });[m
+[31m-  dbUpdate(editCtx.table, editCtx.id, data);[m
+[31m-  renderTable(editCtx.table);[m
+[31m-  _bsEdit.hide();[m
+[31m-  showToast('Registro atualizado!','success');[m
+[31m-}[m
+[31m-[m
+[31m-// ============================================================[m
+[31m-// DELETE[m
+[31m-// ============================================================[m
+[31m-function confirmDelete(table, id) {[m
+[31m-  deleteCtx = { table, id };[m
+[31m-  _bsDelete.show();[m
+[31m-}[m
+[31m-[m
+[31m-function doDelete() {[m
+[31m-  if (!deleteCtx) return;[m
+[31m-  if (deleteCtx.id) {[m
+[31m-    dbDelete(deleteCtx.table, deleteCtx.id);[m
+[31m-    if (deleteCtx.table==='_admins') { renderAdmins(); renderAdminStats(); }[m
+[31m-    else renderTable(deleteCtx.table);[m
+[31m-    showToast('Registro excluído!','danger');[m
+[31m-  }[m
+[31m-  _bsDelete.hide();[m
+[31m-}[m
+[31m-[m
+[31m-// ============================================================[m
+[31m-// ADMIN CRUD[m
+[31m-// ============================================================[m
+[31m-function handleAdminSubmit(e) {[m
+[31m-  e.preventDefault();[m
+[31m-  const id      = document.getElementById('admin-form-id').value;[m
+[31m-  const nome    = document.getElementById('af-nome').value.trim();[m
+[31m-  const email   = document.getElementById('af-email').value.trim();[m
+[31m-  const usuario = document.getElementById('af-usuario').value.trim();[m
+[31m-  const perfil  = document.getElementById('af-perfil').value;[m
+[31m-  const senha   = document.getElementById('af-senha').value;[m
+[31m-  const senha2  = document.getElementById('af-senha2').value;[m
+[31m-  const status  = document.getElementById('af-status').value;[m
+[31m-[m
+[31m-  if (!nome||!email||!usuario) { showToast('Preencha nome, e-mail e usuário.','danger'); return; }[m
+[31m-  const admins = DB['_admins']||[];[m
+[31m-  const dup = admins.find(a=>a._id!=id&&(a.admin_email===email||a.admin_usuario===usuario));[m
+[31m-  if (dup) { showToast('E-mail ou usuário já cadastrado!','danger'); return; }[m
+[31m-[m
+[31m-  if (id) {[m
+[31m-    if (senha) {[m
+[31m-      if (senha!==senha2){ showToast('As senhas não conferem!','danger'); return; }[m
+[31m-      if (senha.length<8){ showToast('Mínimo 8 caracteres.','danger'); return; }[m
+[31m-    }[m
+[31m-    DB['_admins'] = admins.map(a => a._id==id ? {[m
+[31m-      ...a, admin_nome:nome, admin_email:email, admin_usuario:usuario,[m
+[31m-      admin_perfil:perfil, admin_status:status,[m
+[31m-      ...(senha?{admin_senha:senha}:{})[m
+[31m-    } : a);[m
+[31m-    showToast('Administrador atualizado!','success');[m
+[31m-  } else {[m
+[31m-    if (!senha)          { showToast('Informe uma senha.','danger'); return; }[m
+[31m-    if (senha!==senha2)  { showToast('As senhas não conferem!','danger'); return; }[m
+[31m-    if (senha.length<8)  { showToast('Mínimo 8 caracteres.','danger'); return; }[m
+[31m-    DB['_admins'].push({[m
+[31m-      _id:Date.now(), admin_nome:nome, admin_email:email, admin_usuario:usuario,[m
+[31m-      admin_senha:senha, admin_perfil:perfil, admin_status:status,[m
+[31m-      _created:new Date().toLocaleDateString('pt-BR')[m
+[31m-    });[m
+[31m-    showToast('Administrador cadastrado!','success');[m
+[31m-  }[m
+[31m-  resetAdminForm(); renderAdmins(); renderAdminStats();[m
+[31m-}[m
+[31m-[m
+[31m-function resetAdminForm() {[m
+[31m-  document.getElementById('admin-form-id').value='';[m
+[31m-  ['af-nome','af-email','af-usuario','af-senha','af-senha2'].forEach(id=>{ document.getElementById(id).value=''; });[m
+[31m-  document.getElementById('af-perfil').value='admin';[m
+[31m-  document.getElementById('af-status').value='active';[m
+[31m-  document.getElementById('admin-form-btn').innerHTML='<i class="bi bi-person-plus-fill me-1"></i>Cadastrar Administrador';[m
+[31m-  document.getElementById('pw-bar').className='pw-bar';[m
+[31m-  document.getElementById('pw-hint').textContent='';[m
+[31m-}[m
+[31m-[m
+[31m-function editAdmin(id) {[m
+[31m-  const a=(DB['_admins']||[]).find(x=>x._id==id);[m
+[31m-  if (!a) return;[m
+[31m-  document.getElementById('admin-form-id').value=a._id;[m
+[31m-  document.getElementById('af-nome').value=a.admin_nome;[m
+[31m-  document.getElementById('af-email').value=a.admin_email;[m
+[31m-  document.getElementById('af-usuario').value=a.admin_usuario;[m
+[31m-  document.getElementById('af-perfil').value=a.admin_perfil;[m
+[31m-  document.getElementById('af-status').value=a.admin_status;[m
+[31m-  document.getElementById('af-senha').value='';[m
+[31m-  document.getElementById('af-senha2').value='';[m
+[31m-  document.getElementById('admin-form-btn').innerHTML='<i class="bi bi-floppy-fill me-1"></i>Salvar Alterações';[m
+[31m-  document.getElementById('pw-hint').textContent='Deixe em branco para manter a senha atual.';[m
+[31m-  document.querySelector('#page-admins .admin-card').scrollIntoView({behavior:'smooth'});[m
+[31m-}[m
+[31m-[m
+[31m-function deleteAdmin(id) {[m
+[31m-  if (id==(currentUser&&currentUser._id)) { showToast('Não é possível excluir a própria conta!','danger'); return; }[m
+[31m-  deleteCtx={table:'_admins',id};[m
+[31m-  _bsDelete.show();[m
+[31m-}[m
+[31m-[m
+[31m-function renderAdmins() {[m
+[31m-  const search=(document.getElementById('admin-search')?.value||'').toLowerCase();[m
+[31m-  const perfil=document.getElementById('admin-filter-perfil')?.value||'';[m
+[31m-  const status=document.getElementById('admin-filter-status')?.value||'';[m
+[31m-  let list=DB['_admins']||[];[m
+[31m-  if(search) list=list.filter(a=>(a.admin_nome+a.admin_email+a.admin_usuario).toLowerCase().includes(search));[m
+[31m-  if(perfil) list=list.filter(a=>a.admin_perfil===perfil);[m
+[31m-  if(status) list=list.filter(a=>a.admin_status===status);[m
+[31m-  const isSup=currentUser&&currentUser.admin_perfil==='super';[m
+[31m-[m
+[31m-  // Cards[m
+[31m-  const grid=document.getElementById('admin-grid');[m
+[31m-  if(grid){[m
+[31m-    grid.innerHTML=list.length ? list.map(a=>{[m
+[31m-      const r=roleLabels[a.admin_perfil]||{label:a.admin_perfil,cls:'role-viewer'};[m
+[31m-      const initials=a.admin_nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();[m
+[31m-      const isMe=currentUser&&a._id==currentUser._id;[m
+[31m-      return `<div class="col-md-4 col-sm-6">[m
+[31m-        <div class="user-card">[m
+[31m-          <div class="d-flex align-items-center gap-2 mb-2">[m
+[31m-            <div class="avatar">${initials}</div>[m
+[31m-            <div class="overflow-hidden">[m
+[31m-              <div class="user-card-name">${a.admin_nome}${isMe?' <span class="badge" style="background:var(--roxo);font-size:9px">você</span>':''}</div>[m
+[31m-              <div class="user-card-email">${a.admin_email}</div>[m
+[31m-            </div>[m
+[31m-          </div>[m
+[31m-          <div class="text-muted" style="font-size:12px">@${a.admin_usuario}</div>[m
+[31m-          <div class="user-card-footer">[m
+[31m-            <div>[m
+[31m-              <span class="role-badge ${r.cls}">${r.label}</span>[m
+[31m-              <span style="font-size:12px;margin-left:6px">[m
+[31m-                <span class="status-dot ${a.admin_status}"></span>${a.admin_status==='active'?'Ativo':'Inativo'}[m
+[31m-              </span>[m
+[31m-            </div>[m
+[31m-            ${isSup?`<div class="d-flex gap-1">[m
+[31m-              <button class="btn-sm-roxo" onclick="editAdmin(${a._id})"><i class="bi bi-pencil-fill"></i></button>[m
+[31m-              <button class="btn-sm-danger" onclick="deleteAdmin(${a._id})" ${isMe?'disabled':''}><i class="bi bi-trash-fill"></i></button>[m
+[31m-            </div>`:''}[m
+[31m-          </div>[m
+[31m-        </div>[m
+[31m-      </div>`;[m
+[31m-    }).join('') : '<div class="col-12 text-muted">Nenhum administrador encontrado.</div>';[m
+[31m-  }[m
+[31m-[m
+[31m-  // Tabela[m
+[31m-  const tbody=document.getElementById('tb-admins');[m
+[31m-  if(tbody){[m
+[31m-    tbody.innerHTML=list.length ? list.map((a,i)=>{[m
+[31m-      const r=roleLabels[a.admin_perfil]||{label:a.admin_perfil,cls:'role-viewer'};[m
+[31m-      const isMe=currentUser&&a._id==currentUser._id;[m
+[31m-      return `<tr>[m
+[31m-        <td>${i+1}</td>[m
+[31m-        <td>${a.admin_nome}${isMe?' <span class="badge" style="background:var(--roxo);font-size:9px">você</span>':''}</td>[m
+[31m-        <td><code style="background:var(--roxo-pale);padding:2px 7px;border-radius:4px;font-size:12px;color:var(--roxo)">@${a.admin_usuario}</code></td>[m
+[31m-        <td>${a.admin_email}</td>[m
+[31m-        <td><span class="role-badge ${r.cls}">${r.label}</span></td>[m
+[31m-        <td><span class="status-dot ${a.admin_status}"></span>${a.admin_status==='active'?'Ativo':'Inativo'}</td>[m
+[31m-        <td style="font-size:12px;color:#999">${a._created||'—'}</td>[m
+[31m-        <td>${isSup?`<div class="d-flex gap-1">[m
+[31m-          <button class="btn-sm-roxo" onclick="editAdmin(${a._id})"><i class="bi bi-pencil-fill"></i> Editar</button>[m
+[31m-          <button class="btn-sm-danger" onclick="deleteAdmin(${a._id})" ${isMe?'disabled':''} ><i class="bi bi-trash-fill"></i></button>[m
+[31m-        </div>`:'<span class="text-muted">—</span>'}</td>[m
+[31m-      </tr>`;[m
+[31m-    }).join('') : '<tr><td colspan="8" class="text-center text-muted py-3">Nenhum registro</td></tr>';[m
+[31m-  }[m
+[31m-}[m
+[31m-[m
+[31m-function renderAdminStats(){[m
+[31m-  const a=DB['_admins']||[];[m
+[31m-  const c=document.getElementById('admin-stats');[m
+[31m-  if(!c)return;[m
+[31m-  const mk=(icon,label,val,color)=>`<div class="col-6 col-md-3">[m
+[31m-    <div class="stat-card">[m
+[31m-      <div class="stat-icon">${icon}</div>[m
+[31m-      <div class="stat-value" style="color:${color}">${val}</div>[m
+[31m-      <div class="stat-label">${label}</div>[m
+[31m-    </div>[m
+[31m-  </div>`;[m
+[31m-  c.innerHTML=[m
+[31m-    mk('<i class="bi bi-people-fill" style="color:var(--roxo)"></i>','Total',a.length,'var(--roxo)')+[m
+[31m-    mk('<i class="bi bi-check-circle-fill" style="color:#198754"></i>','Ativos',a.filter(x=>x.admin_status==='active').length,'#198754')+[m
+[31m-    mk('<i class="bi bi-shield-fill" style="color:var(--dourado)"></i>','Super Admins',a.filter(x=>x.admin_perfil==='super').length,'var(--dourado)')+[m
+[31m-    mk('<i class="bi bi-pencil-fill" style="color:#5a7fcc"></i>','Editores',a.filter(x=>x.admin_perfil==='editor').length,'#5a7fcc');[m
+[31m-}[m
+[31m-[m
+[31m-// ============================================================[m
+[31m-// PW UTILS[m
+[31m-// ============================================================[m
+[31m-function checkStrength(input){[m
+[31m-  const v=input.value,bar=document.getElementById('pw-bar'),hint=document.getElementById('pw-hint');[m
+[31m-  let s=0;[m
+[31m-  if(v.length>=8)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;[m
+[31m-  bar.className='pw-bar'+(s?' s'+s:'');[m
+[31m-  hint.textContent=v.length?['','Fraca','Razoável','Boa','Forte ✓'][s]:'';[m
+[31m-}[m
+[31m-[m
+[31m-function togglePw(id,btn){[m
+[31m-  const el=document.getElementById(id);[m
+[31m-  if(!el)return;[m
+[31m-  el.type=el.type==='password'?'text':'password';[m
+[31m-  btn.innerHTML=el.type==='password'?'<i class="bi bi-eye"></i>':'<i class="bi bi-eye-slash"></i>';[m
+[31m-}[m
+[31m-[m
+[31m-// ============================================================[m
+[31m-// TOAST[m
+[31m-// ============================================================[m
+[31m-function showToast(msg, type='success'){[m
+[31m-  const el=document.getElementById('main-toast');[m
+[31m-  el.className=`toast align-items-center text-white border-0 bg-${type==='success'?'success':type==='danger'?'danger':'secondary'}`;[m
+[31m-  document.getElementById('toast-msg').textContent=msg;[m
+[31m-  new bootstrap.Toast(el,{delay:2800}).show();[m
+[31m-}[m
+[31m-</script>[m
+[32m+[m[32m<script src="js/admin-cms.js"></script>[m
+ </body>[m
+ </html>[m
+[1mdiff --git a/frontend/catalogo.html b/frontend/catalogo.html[m
+[1mindex 20c3948..e74795c 100644[m
+[1m--- a/frontend/catalogo.html[m
+[1m+++ b/frontend/catalogo.html[m
+[36m@@ -12,9 +12,6 @@[m
+     <title>Studio Orofacial - Catálogo</title>[m
+ </head>[m
+ [m
+[31m-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>[m
+[31m-<script src="js/script.js"></script>[m
+[31m-<script src="js/catalogo.js"></script>[m
+ [m
+ <body>[m
+     <!-- Header Fixo -->[m
+[1mdiff --git a/frontend/js/admin-cms.js b/frontend/js/admin-cms.js[m
+[1mnew file mode 100644[m
+[1mindex 0000000..dda463d[m
+[1m--- /dev/null[m
+[1m+++ b/frontend/js/admin-cms.js[m
+[36m@@ -0,0 +1,379 @@[m
+[32m+[m[32m(() => {[m
+[32m+[m[32m  const API_BASE = window.CMS_API_BASE || ([m
+[32m+[m[32m    location.protocol === 'file:' || location.hostname.endsWith('github.io')[m
+[32m+[m[32m      ? 'http://localhost:6000/api'[m
+[32m+[m[32m      : '/api'[m
+[32m+[m[32m  );[m
+[32m+[m[32m  const DB = {};[m
+[32m+[m[32m  const state = { user: null, token: sessionStorage.getItem('cms_token') || '', deleteCtx: null };[m
+[32m+[m[32m  let deleteModal;[m
+[32m+[m
+[32m+[m[32m  const roleLabels = {[m
+[32m+[m[32m    super: { label: 'Super Admin', cls: 'role-super' },[m
+[32m+[m[32m    admin: { label: 'Admin', cls: 'role-admin' },[m
+[32m+[m[32m    editor: { label: 'Editor', cls: 'role-editor' },[m
+[32m+[m[32m    viewer: { label: 'Visualizador', cls: 'role-viewer' },[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  const schemas = {[m
+[32m+[m[32m    home_main: ['home_Titulo', 'home_subtitulo'],[m
+[32m+[m[32m    home_carousel: ['Image_Titulo', 'Image_Descricao', 'Image_Backgroud'],[m
+[32m+[m[32m    home_info: ['info_texto', 'info_image'],[m
+[32m+[m[32m    sobre_main: ['sobre_Titulo', 'sobre_subtitulo'],[m
+[32m+[m[32m    historia: ['Historia_titulo', 'Historia_texto', 'Historia_Image'],[m
+[32m+[m[32m    principios: ['principios_titulo', 'principios_texto', 'principios_icone'],[m
+[32m+[m[32m    equipe: ['equipe_especialista', 'equipe_universidade', 'equipe_formacao', 'equipe_image'],[m
+[32m+[m[32m    diferenciais: ['Diferenciais_descricao'],[m
+[32m+[m[32m    catalogo_main: ['catalogo_Titulo', 'catalogo_subtitulo'],[m
+[32m+[m[32m    item_catalogo: ['item_catalogo_titulo', 'item_catalogo_descricao_curta', 'item_catalogo_descricao_modal'],[m
+[32m+[m[32m    contato_main: ['contato_titulo', 'contato_subtitulo'],[m
+[32m+[m[32m    mensagem: ['mensagem_nome', 'mensagem_email', 'mensagem_texto'],[m
+[32m+[m[32m    localizacao: ['localizacao_maps', 'localizacao_endereco'],[m
+[32m+[m[32m    contato_info: ['contato_info_telefone', 'contato_info_whatsapp', 'contato_info_texto_atendimento'],[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  const apiFetch = async (path, options = {}) => {[m
+[32m+[m[32m    const headers = new Headers(options.headers || {});[m
+[32m+[m[32m    if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');[m
+[32m+[m[32m    if (state.token) headers.set('Authorization', `Bearer ${state.token}`);[m
+[32m+[m[32m    const response = await fetch(`${API_BASE}${path}`, { ...options, headers, credentials: 'include' });[m
+[32m+[m[32m    const contentType = response.headers.get('content-type') || '';[m
+[32m+[m[32m    const payload = contentType.includes('application/json') ? await response.json() : null;[m
+[32m+[m[32m    if (!response.ok) {[m
+[32m+[m[32m      const error = new Error(payload?.error || `Erro HTTP ${response.status}`);[m
+[32m+[m[32m      error.status = response.status;[m
+[32m+[m[32m      throw error;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    return payload;[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({[m
+[32m+[m[32m    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',[m
+[32m+[m[32m  }[character]));[m
+[32m+[m[32m  const truncate = (value, length) => value.length > length ? `${value.slice(0, length)}…` : value;[m
+[32m+[m[32m  const getRows = (table) => DB[table] || [];[m
+[32m+[m[32m  const formFor = (table) => document.getElementById(`form-${table}`);[m
+[32m+[m
+[32m+[m[32m  function setSession(user, token) {[m
+[32m+[m[32m    state.user = user;[m
+[32m+[m[32m    state.token = token || '';[m
+[32m+[m[32m    if (state.token) sessionStorage.setItem('cms_token', state.token);[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  function clearSession() {[m
+[32m+[m[32m    state.user = null;[m
+[32m+[m[32m    state.token = '';[m
+[32m+[m[32m    sessionStorage.removeItem('cms_token');[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  function showPanel(user) {[m
+[32m+[m[32m    state.user = user;[m
+[32m+[m[32m    document.getElementById('login-screen').style.display = 'none';[m
+[32m+[m[32m    document.getElementById('panel-screen').style.display = 'flex';[m
+[32m+[m[32m    document.getElementById('topbar-name').textContent = user.admin_nome || user.admin_email;[m
+[32m+[m[32m    document.getElementById('topbar-role').textContent = roleLabels[user.admin_perfil]?.label || user.admin_perfil;[m
+[32m+[m[32m    document.getElementById('topbar-avatar').textContent = (user.admin_nome || user.admin_email).charAt(0).toUpperCase();[m
+[32m+[m[32m    document.getElementById('nav-admins').style.display = user.admin_perfil === 'super' ? 'flex' : 'none';[m
+[32m+[m[32m    loadAll().catch((error) => showToast(error.message, 'danger'));[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  window.doLogin = async function doLogin() {[m
+[32m+[m[32m    const login = document.getElementById('login-user')?.value.trim();[m
+[32m+[m[32m    const password = document.getElementById('login-pass')?.value || '';[m
+[32m+[m[32m    const errorBox = document.getElementById('login-error');[m
+[32m+[m[32m    if (errorBox) errorBox.style.display = 'none';[m
+[32m+[m[32m    if (!login || !password) {[m
+[32m+[m[32m      if (errorBox) { errorBox.textContent = 'Informe o usuário/e-mail e a senha.'; errorBox.style.display = 'block'; }[m
+[32m+[m[32m      return;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      const result = await apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ login, password }) });[m
+[32m+[m[32m      setSession(result.user, result.token);[m
+[32m+[m[32m      showPanel(result.user);[m
+[32m+[m[32m    } catch (error) {[m
+[32m+[m[32m      if (errorBox) { errorBox.textContent = error.message || 'Usuário ou senha incorretos.'; errorBox.style.display = 'block'; }[m
+[32m+[m[32m    }[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.doLogout = async function doLogout() {[m
+[32m+[m[32m    try { await apiFetch('/auth/logout', { method: 'POST' }); } catch (_) { /* token já pode ter expirado */ }[m
+[32m+[m[32m    clearSession();[m
+[32m+[m[32m    document.getElementById('panel-screen').style.display = 'none';[m
+[32m+[m[32m    document.getElementById('login-screen').style.display = 'flex';[m
+[32m+[m[32m    document.getElementById('login-user').value = '';[m
+[32m+[m[32m    document.getElementById('login-pass').value = '';[m
+[32m+[m[32m    document.getElementById('nav-admins').style.display = 'none';[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  async function restoreSession() {[m
+[32m+[m[32m    if (!state.token) return;[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      const result = await apiFetch('/auth/me');[m
+[32m+[m[32m      showPanel(result.user);[m
+[32m+[m[32m    } catch (_) {[m
+[32m+[m[32m      clearSession();[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  async function loadAll() {[m
+[32m+[m[32m    const data = await apiFetch('/cms');[m
+[32m+[m[32m    Object.assign(DB, data);[m
+[32m+[m[32m    Object.keys(schemas).forEach(renderTable);[m
+[32m+[m[32m    if (state.user?.admin_perfil === 'super') await loadAdmins();[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  async function loadAdmins() {[m
+[32m+[m[32m    DB._admins = await apiFetch('/admins');[m
+[32m+[m[32m    renderAdmins();[m
+[32m+[m[32m    renderAdminStats();[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  window.showPage = function showPage(page, link) {[m
+[32m+[m[32m    document.querySelectorAll('.page').forEach((element) => element.classList.remove('active'));[m
+[32m+[m[32m    document.querySelectorAll('.sidebar a').forEach((element) => element.classList.remove('active'));[m
+[32m+[m[32m    document.getElementById(`page-${page}`)?.classList.add('active');[m
+[32m+[m[32m    if (link) link.classList.add('active');[m
+[32m+[m[32m    if (page === 'admins' && state.user?.admin_perfil === 'super') loadAdmins().catch((error) => showToast(error.message, 'danger'));[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.switchTab = function switchTab(link, page, tab) {[m
+[32m+[m[32m    const parent = link.closest('.page');[m
+[32m+[m[32m    parent.querySelectorAll('.nav-link').forEach((element) => element.classList.remove('active'));[m
+[32m+[m[32m    parent.querySelectorAll('.tab-pane').forEach((element) => element.classList.remove('active'));[m
+[32m+[m[32m    link.classList.add('active');[m
+[32m+[m[32m    document.getElementById(`${page}-tab-${tab}`)?.classList.add('active');[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.handleSubmit = async function handleSubmit(event, table) {[m
+[32m+[m[32m    event.preventDefault();[m
+[32m+[m[32m    const form = event.target;[m
+[32m+[m[32m    const formData = Object.fromEntries(new FormData(form));[m
+[32m+[m[32m    const id = formData.id || '';[m
+[32m+[m[32m    delete formData.id;[m
+[32m+[m[32m    const button = form.querySelector('button[type="submit"]');[m
+[32m+[m[32m    if (button) button.disabled = true;[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      const response = await apiFetch(id ? `/cms/${table}/${encodeURIComponent(id)}` : `/cms/${table}`, {[m
+[32m+[m[32m        method: id ? 'PUT' : 'POST',[m
+[32m+[m[32m        body: JSON.stringify(formData),[m
+[32m+[m[32m      });[m
+[32m+[m[32m      DB[table] = id[m
+[32m+[m[32m        ? getRows(table).map((row) => String(row._id) === String(id) ? response : row)[m
+[32m+[m[32m        : [response, ...getRows(table)];[m
+[32m+[m[32m      resetContentForm(table);[m
+[32m+[m[32m      renderTable(table);[m
+[32m+[m[32m      showToast(id ? 'Registro atualizado!' : 'Registro inserido!', 'success');[m
+[32m+[m[32m    } catch (error) {[m
+[32m+[m[32m      showToast(error.message || 'Não foi possível guardar o registro.', 'danger');[m
+[32m+[m[32m    } finally {[m
+[32m+[m[32m      if (button) button.disabled = false;[m
+[32m+[m[32m    }[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.resetContentForm = function resetContentForm(table) {[m
+[32m+[m[32m    const form = formFor(table);[m
+[32m+[m[32m    if (!form) return;[m
+[32m+[m[32m    form.reset();[m
+[32m+[m[32m    if (form.elements.id) form.elements.id.value = '';[m
+[32m+[m[32m    const button = form.querySelector('button[type="submit"]');[m
+[32m+[m[32m    if (button) button.innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar';[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  function renderTable(table) {[m
+[32m+[m[32m    const tbody = document.getElementById(`tb-${table}`);[m
+[32m+[m[32m    if (!tbody) return;[m
+[32m+[m[32m    const rows = getRows(table);[m
+[32m+[m[32m    const fields = schemas[table] || [];[m
+[32m+[m[32m    if (!rows.length) {[m
+[32m+[m[32m      tbody.innerHTML = `<tr><td colspan="${fields.length + 2}" class="text-center text-muted py-3">Nenhum registro</td></tr>`;[m
+[32m+[m[32m      return;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    tbody.innerHTML = rows.map((row, index) => `<tr>[m
+[32m+[m[32m      <td>${index + 1}</td>[m
+[32m+[m[32m      ${fields.map((field) => `<td title="${escapeHtml(row[field] ?? '')}">${escapeHtml(truncate(String(row[field] ?? '—'), 45))}</td>`).join('')}[m
+[32m+[m[32m      <td><button class="btn-sm-roxo me-1" onclick="openEdit('${table}', ${Number(row._id)})"><i class="bi bi-pencil-fill"></i> Editar</button><button class="btn-sm-danger" onclick="confirmDelete('${table}', ${Number(row._id)})"><i class="bi bi-trash-fill"></i></button></td>[m
+[32m+[m[32m    </tr>`).join('');[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  window.openEdit = function openEdit(table, id) {[m
+[32m+[m[32m    const row = getRows(table).find((item) => String(item._id) === String(id));[m
+[32m+[m[32m    const form = formFor(table);[m
+[32m+[m[32m    if (!row || !form) return;[m
+[32m+[m[32m    if (form.elements.id) form.elements.id.value = row._id;[m
+[32m+[m[32m    (schemas[table] || []).forEach((field) => {[m
+[32m+[m[32m      const control = form.elements.namedItem(field);[m
+[32m+[m[32m      if (control) control.value = row[field] ?? '';[m
+[32m+[m[32m    });[m
+[32m+[m[32m    const button = form.querySelector('button[type="submit"]');[m
+[32m+[m[32m    if (button) button.innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar registro';[m
+[32m+[m[32m    form.scrollIntoView({ behavior: 'smooth', block: 'center' });[m
+[32m+[m[32m    form.querySelector('input:not([type="hidden"]), textarea, select')?.focus({ preventScroll: true });[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.confirmDelete = function confirmDelete(table, id) {[m
+[32m+[m[32m    const form = formFor(table);[m
+[32m+[m[32m    const selectedId = id || form?.elements.id?.value;[m
+[32m+[m[32m    if (!selectedId) return showToast('Clique em Editar para selecionar um registro antes de excluir.', 'danger');[m
+[32m+[m[32m    state.deleteCtx = { table, id: selectedId };[m
+[32m+[m[32m    deleteModal?.show();[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.doDelete = async function doDelete() {[m
+[32m+[m[32m    if (!state.deleteCtx) return;[m
+[32m+[m[32m    const { table, id } = state.deleteCtx;[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      if (table === '_admins') {[m
+[32m+[m[32m        await apiFetch(`/admins/${encodeURIComponent(id)}`, { method: 'DELETE' });[m
+[32m+[m[32m        await loadAdmins();[m
+[32m+[m[32m      } else {[m
+[32m+[m[32m        await apiFetch(`/cms/${table}/${encodeURIComponent(id)}`, { method: 'DELETE' });[m
+[32m+[m[32m        DB[table] = getRows(table).filter((row) => String(row._id) !== String(id));[m
+[32m+[m[32m        resetContentForm(table);[m
+[32m+[m[32m        renderTable(table);[m
+[32m+[m[32m      }[m
+[32m+[m[32m      showToast('Registro excluído!', 'danger');[m
+[32m+[m[32m    } catch (error) {[m
+[32m+[m[32m      showToast(error.message || 'Não foi possível excluir o registro.', 'danger');[m
+[32m+[m[32m    } finally {[m
+[32m+[m[32m      state.deleteCtx = null;[m
+[32m+[m[32m      deleteModal?.hide();[m
+[32m+[m[32m    }[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.saveEdit = function saveEdit() {[m
+[32m+[m[32m    // A edição é gravada no formulário superior, conforme o fluxo do CMS.[m
+[32m+[m[32m    document.getElementById('modal-edit')?.querySelector('[data-bs-dismiss="modal"]')?.click();[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.handleAdminSubmit = async function handleAdminSubmit(event) {[m
+[32m+[m[32m    event.preventDefault();[m
+[32m+[m[32m    const id = document.getElementById('admin-form-id').value;[m
+[32m+[m[32m    const nome = document.getElementById('af-nome').value.trim();[m
+[32m+[m[32m    const email = document.getElementById('af-email').value.trim();[m
+[32m+[m[32m    const usuario = document.getElementById('af-usuario').value.trim();[m
+[32m+[m[32m    const perfil = document.getElementById('af-perfil').value;[m
+[32m+[m[32m    const senha = document.getElementById('af-senha').value;[m
+[32m+[m[32m    const senha2 = document.getElementById('af-senha2').value;[m
+[32m+[m[32m    const status = document.getElementById('af-status').value;[m
+[32m+[m[32m    if (!nome || !email || !usuario) return showToast('Preencha nome, e-mail e usuário.', 'danger');[m
+[32m+[m[32m    if (!id && !senha) return showToast('Informe uma senha.', 'danger');[m
+[32m+[m[32m    if (senha && senha !== senha2) return showToast('As senhas não conferem!', 'danger');[m
+[32m+[m[32m    if (senha && senha.length < 8) return showToast('Mínimo 8 caracteres.', 'danger');[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      await apiFetch(id ? `/admins/${id}` : '/admins', {[m
+[32m+[m[32m        method: id ? 'PUT' : 'POST',[m
+[32m+[m[32m        body: JSON.stringify({ nome, email, usuario, perfil, status, senha: senha || undefined }),[m
+[32m+[m[32m      });[m
+[32m+[m[32m      await loadAdmins();[m
+[32m+[m[32m      resetAdminForm();[m
+[32m+[m[32m      showToast(id ? 'Administrador atualizado!' : 'Administrador cadastrado!', 'success');[m
+[32m+[m[32m    } catch (error) {[m
+[32m+[m[32m      showToast(error.message || 'Não foi possível guardar o administrador.', 'danger');[m
+[32m+[m[32m    }[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.resetAdminForm = function resetAdminForm() {[m
+[32m+[m[32m    document.getElementById('admin-form-id').value = '';[m
+[32m+[m[32m    ['af-nome', 'af-email', 'af-usuario', 'af-senha', 'af-senha2'].forEach((id) => { document.getElementById(id).value = ''; });[m
+[32m+[m[32m    document.getElementById('af-perfil').value = 'admin';[m
+[32m+[m[32m    document.getElementById('af-status').value = 'active';[m
+[32m+[m[32m    document.getElementById('admin-form-btn').innerHTML = '<i class="bi bi-person-plus-fill me-1"></i>Cadastrar Administrador';[m
+[32m+[m[32m    document.getElementById('pw-bar').className = 'pw-bar';[m
+[32m+[m[32m    document.getElementById('pw-hint').textContent = '';[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.editAdmin = function editAdmin(id) {[m
+[32m+[m[32m    const admin = getRows('_admins').find((item) => String(item._id) === String(id));[m
+[32m+[m[32m    if (!admin) return;[m
+[32m+[m[32m    document.getElementById('admin-form-id').value = admin._id;[m
+[32m+[m[32m    document.getElementById('af-nome').value = admin.admin_nome || '';[m
+[32m+[m[32m    document.getElementById('af-email').value = admin.admin_email || '';[m
+[32m+[m[32m    document.getElementById('af-usuario').value = admin.admin_usuario || admin.admin_email || '';[m
+[32m+[m[32m    document.getElementById('af-perfil').value = admin.admin_perfil || 'admin';[m
+[32m+[m[32m    document.getElementById('af-status').value = admin.admin_status || 'active';[m
+[32m+[m[32m    document.getElementById('af-senha').value = '';[m
+[32m+[m[32m    document.getElementById('af-senha2').value = '';[m
+[32m+[m[32m    document.getElementById('admin-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Salvar Alterações';[m
+[32m+[m[32m    document.getElementById('pw-hint').textContent = 'Deixe em branco para manter a senha atual.';[m
+[32m+[m[32m    document.querySelector('#page-admins .admin-card')?.scrollIntoView({ behavior: 'smooth' });[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.deleteAdmin = function deleteAdmin(id) {[m
+[32m+[m[32m    if (String(id) === String(state.user?._id)) return showToast('Não é possível excluir a própria conta!', 'danger');[m
+[32m+[m[32m    state.deleteCtx = { table: '_admins', id };[m
+[32m+[m[32m    deleteModal?.show();[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.renderAdmins = function renderAdmins() {[m
+[32m+[m[32m    const search = (document.getElementById('admin-search')?.value || '').toLowerCase();[m
+[32m+[m[32m    const perfil = document.getElementById('admin-filter-perfil')?.value || '';[m
+[32m+[m[32m    const status = document.getElementById('admin-filter-status')?.value || '';[m
+[32m+[m[32m    let list = getRows('_admins');[m
+[32m+[m[32m    if (search) list = list.filter((admin) => `${admin.admin_nome}${admin.admin_email}${admin.admin_usuario}`.toLowerCase().includes(search));[m
+[32m+[m[32m    if (perfil) list = list.filter((admin) => admin.admin_perfil === perfil);[m
+[32m+[m[32m    if (status) list = list.filter((admin) => admin.admin_status === status);[m
+[32m+[m[32m    const isSuper = state.user?.admin_perfil === 'super';[m
+[32m+[m[32m    const grid = document.getElementById('admin-grid');[m
+[32m+[m[32m    if (grid) grid.innerHTML = list.length ? list.map((admin) => {[m
+[32m+[m[32m      const role = roleLabels[admin.admin_perfil] || { label: admin.admin_perfil, cls: 'role-viewer' };[m
+[32m+[m[32m      const initials = (admin.admin_nome || admin.admin_email).split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase();[m
+[32m+[m[32m      const isMe = String(admin._id) === String(state.user?._id);[m
+[32m+[m[32m      return `<div class="col-md-4 col-sm-6"><div class="user-card"><div class="d-flex align-items-center gap-2 mb-2"><div class="avatar">${escapeHtml(initials)}</div><div class="overflow-hidden"><div class="user-card-name">${escapeHtml(admin.admin_nome)}${isMe ? ' <span class="badge" style="background:var(--roxo);font-size:9px">você</span>' : ''}</div><div class="user-card-email">${escapeHtml(admin.admin_email)}</div></div></div><div class="text-muted" style="font-size:12px">@${escapeHtml(admin.admin_usuario || admin.admin_email)}</div><div class="user-card-footer"><div><span class="role-badge ${role.cls}">${role.label}</span><span style="font-size:12px;margin-left:6px"><span class="status-dot ${admin.admin_status}"></span>${admin.admin_status === 'active' ? 'Ativo' : 'Inativo'}</span></div>${isSuper ? `<div class="d-flex gap-1"><button class="btn-sm-roxo" onclick="editAdmin(${Number(admin._id)})"><i class="bi bi-pencil-fill"></i></button><button class="btn-sm-danger" onclick="deleteAdmin(${Number(admin._id)})" ${isMe ? 'disabled' : ''}><i class="bi bi-trash-fill"></i></button></div>` : ''}</div></div></div>`;[m
+[32m+[m[32m    }).join('') : '<div class="col-12 text-muted">Nenhum administrador encontrado.</div>';[m
+[32m+[m
+[32m+[m[32m    const tbody = document.getElementById('tb-admins');[m
+[32m+[m[32m    if (tbody) tbody.innerHTML = list.length ? list.map((admin, index) => {[m
+[32m+[m[32m      const role = roleLabels[admin.admin_perfil] || { label: admin.admin_perfil, cls: 'role-viewer' };[m
+[32m+[m[32m      const isMe = String(admin._id) === String(state.user?._id);[m
+[32m+[m[32m      return `<tr><td>${index + 1}</td><td>${escapeHtml(admin.admin_nome)}${isMe ? ' <span class="badge" style="background:var(--roxo);font-size:9px">você</span>' : ''}</td><td><code style="background:var(--roxo-pale);padding:2px 7px;border-radius:4px;font-size:12px;color:var(--roxo)">@${escapeHtml(admin.admin_usuario || admin.admin_email)}</code></td><td>${escapeHtml(admin.admin_email)}</td><td><span class="role-badge ${role.cls}">${role.label}</span></td><td><span class="status-dot ${admin.admin_status}"></span>${admin.admin_status === 'active' ? 'Ativo' : 'Inativo'}</td><td style="font-size:12px;color:#999">${formatDate(admin._created)}</td><td>${isSuper ? `<div class="d-flex gap-1"><button class="btn-sm-roxo" onclick="editAdmin(${Number(admin._id)})"><i class="bi bi-pencil-fill"></i> Editar</button><button class="btn-sm-danger" onclick="deleteAdmin(${Number(admin._id)})" ${isMe ? 'disabled' : ''}><i class="bi bi-trash-fill"></i></button></div>` : '<span class="text-muted">—</span>'}</td></tr>`;[m
+[32m+[m[32m    }).join('') : '<tr><td colspan="8" class="text-center text-muted py-3">Nenhum registro</td></tr>';[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.renderAdminStats = function renderAdminStats() {[m
+[32m+[m[32m    const admins = getRows('_admins');[m
+[32m+[m[32m    const container = document.getElementById('admin-stats');[m
+[32m+[m[32m    if (!container) return;[m
+[32m+[m[32m    const card = (icon, label, value, color) => `<div class="col-6 col-md-3"><div class="stat-card"><div class="stat-icon">${icon}</div><div class="stat-value" style="color:${color}">${value}</div><div class="stat-label">${label}</div></div></div>`;[m
+[32m+[m[32m    container.innerHTML = card('<i class="bi bi-people-fill" style="color:var(--roxo)"></i>', 'Total', admins.length, 'var(--roxo)') + card('<i class="bi bi-check-circle-fill" style="color:#198754"></i>', 'Ativos', admins.filter((admin) => admin.admin_status === 'active').length, '#198754') + card('<i class="bi bi-shield-fill" style="color:var(--dourado)"></i>', 'Super Admins', admins.filter((admin) => admin.admin_perfil === 'super').length, 'var(--dourado)') + card('<i class="bi bi-pencil-fill" style="color:#5a7fcc"></i>', 'Editores', admins.filter((admin) => admin.admin_perfil === 'editor').length, '#5a7fcc');[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.checkStrength = function checkStrength(input) {[m
+[32m+[m[32m    const value = input.value;[m
+[32m+[m[32m    const bar = document.getElementById('pw-bar');[m
+[32m+[m[32m    const hint = document.getElementById('pw-hint');[m
+[32m+[m[32m    let strength = 0;[m
+[32m+[m[32m    if (value.length >= 8) strength++;[m
+[32m+[m[32m    if (/[A-Z]/.test(value)) strength++;[m
+[32m+[m[32m    if (/[0-9]/.test(value)) strength++;[m
+[32m+[m[32m    if (/[^A-Za-z0-9]/.test(value)) strength++;[m
+[32m+[m[32m    bar.className = `pw-bar${strength ? ` s${strength}` : ''}`;[m
+[32m+[m[32m    hint.textContent = value.length ? ['', 'Fraca', 'Razoável', 'Boa', 'Forte ✓'][strength] : '';[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  window.togglePw = function togglePw(id, button) {[m
+[32m+[m[32m    const input = document.getElementById(id);[m
+[32m+[m[32m    if (!input) return;[m
+[32m+[m[32m    input.type = input.type === 'password' ? 'text' : 'password';[m
+[32m+[m[32m    button.innerHTML = input.type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  function formatDate(value) {[m
+[32m+[m[32m    if (!value) return '—';[m
+[32m+[m[32m    const date = new Date(value);[m
+[32m+[m[32m    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('pt-BR');[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  window.closeModal = (id) => document.getElementById(id)?.querySelector('[data-bs-dismiss="modal"]')?.click();[m
+[32m+[m[32m  window.showToast = (message, type = 'success') => {[m
+[32m+[m[32m    const element = document.getElementById('main-toast');[m
+[32m+[m[32m    if (!element) return;[m
+[32m+[m[32m    element.className = `toast align-items-center text-white border-0 bg-${type === 'success' ? 'success' : type === 'danger' ? 'danger' : 'secondary'}`;[m
+[32m+[m[32m    document.getElementById('toast-msg').textContent = message;[m
+[32m+[m[32m    bootstrap.Toast.getOrCreateInstance(element, { delay: 2800 }).show();[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  document.addEventListener('DOMContentLoaded', () => {[m
+[32m+[m[32m    deleteModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-delete'));[m
+[32m+[m[32m    restoreSession();[m
+[32m+[m[32m  });[m
+[32m+[m[32m})();[m
+[1mdiff --git a/frontend/js/admin.js b/frontend/js/admin.js[m
+[1mdeleted file mode 100644[m
+[1mindex fc63b5d..0000000[m
+[1m--- a/frontend/js/admin.js[m
+[1m+++ /dev/null[m
+[36m@@ -1,128 +0,0 @@[m
+[31m-const API_URL = 'http://localhost:3001/api';[m
+[31m-[m
+[31m-let itensCache = []; // guarda os itens carregados, pra reaproveitar na edição sem nova requisição[m
+[31m-[m
+[31m-// Busca todos os itens do catálogo na API[m
+[31m-async function carregarItens() {[m
+[31m-    try {[m
+[31m-        const response = await fetch(`${API_URL}/item`);[m
+[31m-        itensCache = await response.json();[m
+[31m-        renderizarTabelaItens(itensCache);[m
+[31m-    } catch (erro) {[m
+[31m-        console.error('Erro ao carregar itens:', erro);[m
+[31m-    }[m
+[31m-}[m
+[31m-[m
+[31m-// Preenche a tabela #tb-item_catalogo com os dados reais[m
+[31m-function renderizarTabelaItens(itens) {[m
+[31m-    const tbody = document.getElementById('tb-item_catalogo');[m
+[31m-[m
+[31m-    if (itens.length === 0) {[m
+[31m-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr>`;[m
+[31m-        return;[m
+[31m-    }[m
+[31m-[m
+[31m-    tbody.innerHTML = itens.map((item, index) => `[m
+[31m-        <tr>[m
+[31m-            <td>${index + 1}</td>[m
+[31m-            <td>${item.title}</td>[m
+[31m-            <td>${item.short_description}</td>[m
+[31m-            <td>${item.modal_description}</td>[m
+[31m-            <td>[m
+[31m-                <button class="btn-sm-roxo me-1" onclick="editarItem(${item.id_item})">[m
+[31m-                    <i class="bi bi-pencil-fill"></i> Editar[m
+[31m-                </button>[m
+[31m-            </td>[m
+[31m-        </tr>[m
+[31m-    `).join('');[m
+[31m-}[m
+[31m-[m
+[31m-// Carrega os dados de um item no formulário para edição[m
+[31m-function editarItem(id) {[m
+[31m-    const item = itensCache.find(i => i.id_item === id);[m
+[31m-    if (!item) return;[m
+[31m-[m
+[31m-    document.getElementById('item-id').value = item.id_item;[m
+[31m-    document.getElementById('item-titulo').value = item.title;[m
+[31m-    document.getElementById('item-desc-curta').value = item.short_description;[m
+[31m-    document.getElementById('item-desc-modal').value = item.modal_description || '';[m
+[31m-[m
+[31m-    document.getElementById('item-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar';[m
+[31m-[m
+[31m-    // Rola a tela até o formulário, pra facilitar em telas menores[m
+[31m-    document.getElementById('form-item-catalogo').scrollIntoView({ behavior: 'smooth' });[m
+[31m-}[m
+[31m-[m
+[31m-// Limpa o formulário e volta ao modo "criar novo"[m
+[31m-function limparFormularioItem() {[m
+[31m-    document.getElementById('item-id').value = '';[m
+[31m-    document.getElementById('item-titulo').value = '';[m
+[31m-    document.getElementById('item-desc-curta').value = '';[m
+[31m-    document.getElementById('item-desc-modal').value = '';[m
+[31m-    document.getElementById('item-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir';[m
+[31m-}[m
+[31m-[m
+[31m-// Decide entre criar (POST) ou atualizar (PUT) o item[m
+[31m-async function handleItemSubmit(event) {[m
+[31m-    event.preventDefault();[m
+[31m-[m
+[31m-    const id = document.getElementById('item-id').value;[m
+[31m-    const dados = {[m
+[31m-        title: document.getElementById('item-titulo').value,[m
+[31m-        short_description: document.getElementById('item-desc-curta').value,[m
+[31m-        modal_description: document.getElementById('item-desc-modal').value[m
+[31m-    };[m
+[31m-[m
+[31m-    try {[m
+[31m-        if (id) {[m
+[31m-            // MODO EDIÇÃO → PUT[m
+[31m-            await fetch(`${API_URL}/item/${id}`, {[m
+[31m-                method: 'PUT',[m
+[31m-                headers: { 'Content-Type': 'application/json' },[m
+[31m-                body: JSON.stringify(dados)[m
+[31m-            });[m
+[31m-            showToast('Item atualizado!', 'success');[m
+[31m-        } else {[m
+[31m-            // MODO CRIAÇÃO → POST[m
+[31m-            // ATENÇÃO: id_user é obrigatório no backend — ainda não temos login real conectado.[m
+[31m-            // Por enquanto, fixamos id_user = 1 (ajustamos isso quando plugarmos o login de verdade).[m
+[31m-            dados.id_user = 1;[m
+[31m-[m
+[31m-            await fetch(`${API_URL}/item`, {[m
+[31m-                method: 'POST',[m
+[31m-                headers: { 'Content-Type': 'application/json' },[m
+[31m-                body: JSON.stringify(dados)[m
+[31m-            });[m
+[31m-            showToast('Item criado!', 'success');[m
+[31m-        }[m
+[31m-[m
+[31m-        limparFormularioItem();[m
+[31m-        carregarItens();[m
+[31m-    } catch (erro) {[m
+[31m-        console.error('Erro ao salvar item:', erro);[m
+[31m-        showToast('Erro ao salvar item.', 'danger');[m
+[31m-    }[m
+[31m-}[m
+[31m-[m
+[31m-// Deleta o item atualmente carregado no formulário[m
+[31m-async function deletarItemAtual() {[m
+[31m-    const id = document.getElementById('item-id').value;[m
+[31m-[m
+[31m-    if (!id) {[m
+[31m-        showToast('Selecione um item (clique em Editar) antes de deletar.', 'danger');[m
+[31m-        return;[m
+[31m-    }[m
+[31m-[m
+[31m-    const confirmar = confirm('Tem certeza que deseja excluir este item?');[m
+[31m-    if (!confirmar) return;[m
+[31m-[m
+[31m-    try {[m
+[31m-        await fetch(`${API_URL}/item/${id}`, { method: 'DELETE' });[m
+[31m-        showToast('Item excluído!', 'danger');[m
+[31m-        limparFormularioItem();[m
+[31m-        carregarItens();[m
+[31m-    } catch (erro) {[m
+[31m-        console.error('Erro ao excluir item:', erro);[m
+[31m-        showToast('Erro ao excluir item.', 'danger');[m
+[31m-    }[m
+[31m-}[m
+\ No newline at end of file[m
+[1mdiff --git a/frontend/js/catalogo.js b/frontend/js/catalogo.js[m
+[1mdeleted file mode 100644[m
+[1mindex f95362e..0000000[m
+[1m--- a/frontend/js/catalogo.js[m
+[1m+++ /dev/null[m
+[36m@@ -1,66 +0,0 @@[m
+[31m-const API_URL = 'http://localhost:3001/api';[m
+[31m-[m
+[31m-// Busca os itens da API[m
+[31m-async function buscarItens() {[m
+[31m-    try {[m
+[31m-        const response = await fetch(`${API_URL}/item`);[m
+[31m-        const itens = await response.json();[m
+[31m-[m
+[31m-        renderizarItens(itens);[m
+[31m-    } catch (erro) {[m
+[31m-        console.error('Erro ao conectar com a API:', erro);[m
+[31m-    }[m
+[31m-}[m
+[31m-[m
+[31m-// Gera o HTML de um único card + modal[m
+[31m-function criarCardHTML(item) {[m
+[31m-    return `[m
+[31m-        <section class="homeleft">[m
+[31m-            <div class="contact-form">[m
+[31m-                <h2><i class="bi bi-envelope"></i>${item.title}</h2>[m
+[31m-                <div class="form-group">[m
+[31m-                    <p>${item.short_description}</p>[m
+[31m-                </div>[m
+[31m-            </div>[m
+[31m-            <div class="form-buttons">[m
+[31m-                <button type="button" class="btn-clear" data-bs-toggle="modal" data-bs-target="#modal-${item.id_item}">[m
+[31m-                    <i class="bi bi-send"></i> Saiba Mais[m
+[31m-                </button>[m
+[31m-[m
+[31m-                <div class="modal fade" id="modal-${item.id_item}" tabindex="-1" aria-hidden="true">[m
+[31m-                    <div class="modal-dialog">[m
+[31m-                        <div class="modal-content">[m
+[31m-                            <div class="modal-header">[m
+[31m-                                <h1 class="modal-title fs-5">${item.title}</h1>[m
+[31m-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>[m
+[31m-                            </div>[m
+[31m-                            <div class="modal-body">[m
+[31m-                                <p>${item.modal_description}</p>[m
+[31m-                            </div>[m
+[31m-                            <div class="modal-footer">[m
+[31m-                                <button type="button" class="btn btn-clear" data-bs-dismiss="modal">Fechar</button>[m
+[31m-                            </div>[m
+[31m-                        </div>[m
+[31m-                    </div>[m
+[31m-                </div>[m
+[31m-            </div>[m
+[31m-        </section>[m
+[31m-    `;[m
+[31m-}[m
+[31m-[m
+[31m-// Monta os cards em pares (2 por linha), igual ao layout original[m
+[31m-function renderizarItens(itens) {[m
+[31m-    const container = document.getElementById('catalogo-lista');[m
+[31m-    let html = '';[m
+[31m-[m
+[31m-    for (let i = 0; i < itens.length; i += 2) {[m
+[31m-        const par = itens.slice(i, i + 2);[m
+[31m-        html += `<div class="catalogo-container">[m
+[31m-            ${par.map(criarCardHTML).join('')}[m
+[31m-        </div>`;[m
+[31m-    }[m
+[31m-[m
+[31m-    container.innerHTML = html;[m
+[31m-}[m
+[31m-[m
+[31m-buscarItens();[m
+\ No newline at end of file[m
+[1mdiff --git a/frontend/js/login.js b/frontend/js/login.js[m
+[1mindex bd3408f..5b16e6c 100644[m
+[1m--- a/frontend/js/login.js[m
+[1m+++ b/frontend/js/login.js[m
+[36m@@ -1,32 +1,37 @@[m
+[31m-document.addEventListener("DOMContentLoaded", function(){[m
+[31m-    const formulario = document.getElementById("formLogin")[m
+[31m-    const resultado = document.getElementById("resultado")[m
+[31m-    [m
+[31m-    formulario.addEventListener("submit", function(event){[m
+[31m-        event.preventDefault()[m
+[32m+[m[32mdocument.addEventListener('DOMContentLoaded', () => {[m
+[32m+[m[32m  const form = document.getElementById('formLogin');[m
+[32m+[m[32m  if (!form) return;[m
+[32m+[m[32m  const apiBase = window.CMS_API_BASE || ([m
+[32m+[m[32m    location.protocol === 'file:' || location.hostname.endsWith('github.io')[m
+[32m+[m[32m      ? 'http://localhost:6000/api'[m
+[32m+[m[32m      : '/api'[m
+[32m+[m[32m  );[m
+ [m
+[31m-        const loginUser = document.getElementById("loginID").value[m
+[31m-        const passUser = document.getElementById("passwordID").value[m
+[31m-        // Credenciais valídas[m
+[31m-        const loginSys = "adenilson"[m
+[31m-        const passSys = 123456[m
+[31m-        // Comparação de usuário e senha verdadeira[m
+[31m-        if ( loginSys == loginUser && passSys == passUser) {[m
+[31m-            // Resultado valído.[m
+[31m-            /* resultado.innerHTML = `[m
+[31m-                <h3>Dados Recebidos</h3>[m
+[31m-                <p><strong>Login:</strong> ${loginUser}</p>[m
+[31m-                <p><strong>Senha:</strong> ${passUser}</p>[m
+[31m-            `*/[m
+[31m-            // Falha no login[m
+[31m-            alert("Login realizado com sucesso! ")[m
+[31m-        } else {[m
+[31m-            // Falha no login[m
+[31m-            alert("Usuário ou senha incorreta!")[m
+[31m-        }[m
+[31m-    })[m
+[31m-[m
+[31m-    formulario.addEventListener("reset", function(event){[m
+[31m-        resultado.innerHTML = ``[m
+[31m-    })[m
+[31m-})[m
+\ No newline at end of file[m
+[32m+[m[32m  form.addEventListener('submit', async (event) => {[m
+[32m+[m[32m    event.preventDefault();[m
+[32m+[m[32m    const login = document.getElementById('loginID')?.value.trim();[m
+[32m+[m[32m    const password = document.getElementById('passwordID')?.value || '';[m
+[32m+[m[32m    if (!login || !password) {[m
+[32m+[m[32m      window.alert('Informe o usuário/e-mail e a senha.');[m
+[32m+[m[32m      return;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    const button = form.querySelector('button[type="submit"]');[m
+[32m+[m[32m    if (button) button.disabled = true;[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      const response = await fetch(`${apiBase}/auth/login`, {[m
+[32m+[m[32m        method: 'POST',[m
+[32m+[m[32m        headers: { 'Content-Type': 'application/json' },[m
+[32m+[m[32m        credentials: 'include',[m
+[32m+[m[32m        body: JSON.stringify({ login, password }),[m
+[32m+[m[32m      });[m
+[32m+[m[32m      const data = await response.json();[m
+[32m+[m[32m      if (!response.ok) throw new Error(data.error || 'Usuário ou senha incorretos.');[m
+[32m+[m[32m      sessionStorage.setItem('cms_token', data.token);[m
+[32m+[m[32m      window.location.href = 'admin.html';[m
+[32m+[m[32m    } catch (error) {[m
+[32m+[m[32m      window.alert(error.message || 'Não foi possível autenticar.');[m
+[32m+[m[32m    } finally {[m
+[32m+[m[32m      if (button) button.disabled = false;[m
+[32m+[m[32m    }[m
+[32m+[m[32m  });[m
+[32m+[m[32m});[m
+[1mdiff --git a/frontend/js/script.js b/frontend/js/script.js[m
+[1mnew file mode 100644[m
+[1mindex 0000000..14a45ec[m
+[1m--- /dev/null[m
+[1m+++ b/frontend/js/script.js[m
+[36m@@ -0,0 +1,162 @@[m
+[32m+[m[32m(() => {[m
+[32m+[m[32m  const API_BASE = window.CMS_API_BASE || ([m
+[32m+[m[32m    location.protocol === 'file:' || location.hostname.endsWith('github.io')[m
+[32m+[m[32m      ? 'http://localhost:6000/api'[m
+[32m+[m[32m      : '/api'[m
+[32m+[m[32m  );[m
+[32m+[m
+[32m+[m[32m  async function request(path, options = {}) {[m
+[32m+[m[32m    const headers = new Headers(options.headers || {});[m
+[32m+[m[32m    if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');[m
+[32m+[m[32m    const response = await fetch(`${API_BASE}${path}`, { ...options, headers, credentials: 'include' });[m
+[32m+[m[32m    const contentType = response.headers.get('content-type') || '';[m
+[32m+[m[32m    const data = contentType.includes('application/json') ? await response.json() : null;[m
+[32m+[m[32m    if (!response.ok) throw new Error(data?.error || `Erro HTTP ${response.status}`);[m
+[32m+[m[32m    return data;[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({[m
+[32m+[m[32m    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',[m
+[32m+[m[32m  }[character]));[m
+[32m+[m[32m  const first = (rows) => Array.isArray(rows) ? rows[0] : null;[m
+[32m+[m[32m  const setText = (selector, value) => {[m
+[32m+[m[32m    const element = document.querySelector(selector);[m
+[32m+[m[32m    if (element && value !== undefined && value !== null) element.textContent = value;[m
+[32m+[m[32m  };[m
+[32m+[m
+[32m+[m[32m  async function renderHome() {[m
+[32m+[m[32m    const [mainRows, carouselRows, infoRows] = await Promise.all([[m
+[32m+[m[32m      request('/cms/home_main'), request('/cms/home_carousel'), request('/cms/home_info'),[m
+[32m+[m[32m    ]);[m
+[32m+[m[32m    const main = first(mainRows);[m
+[32m+[m[32m    if (main) {[m
+[32m+[m[32m      setText('.page-title h1', main.home_Titulo);[m
+[32m+[m[32m      setText('.page-title p', main.home_subtitulo);[m
+[32m+[m[32m    }[m
+[32m+[m[32m    const carousel = document.querySelector('#carouselExampleCaptions');[m
+[32m+[m[32m    if (carousel && carouselRows?.length) {[m
+[32m+[m[32m      const indicators = carousel.querySelector('.carousel-indicators');[m
+[32m+[m[32m      const inner = carousel.querySelector('.carousel-inner');[m
+[32m+[m[32m      if (indicators && inner) {[m
+[32m+[m[32m        indicators.innerHTML = carouselRows.map((row, index) => `<button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="${index}" class="${index === 0 ? 'active' : ''}" aria-current="${index === 0 ? 'true' : 'false'}" aria-label="Slide ${index + 1}"></button>`).join('');[m
+[32m+[m[32m        inner.innerHTML = carouselRows.map((row, index) => `<div class="carousel-item${index === 0 ? ' active' : ''}"><img src="${escapeHtml(row.Image_Backgroud)}" class="d-block w-100" alt="${escapeHtml(row.Image_Titulo || 'Imagem do slide')}"><div class="carousel-caption d-none d-md-block"><h5>${escapeHtml(row.Image_Titulo)}</h5><p>${escapeHtml(row.Image_Descricao)}</p></div></div>`).join('');[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+[32m+[m[32m    document.querySelectorAll('.homebox').forEach((box, index) => {[m
+[32m+[m[32m      const row = infoRows?.[index];[m
+[32m+[m[32m      if (!row) return;[m
+[32m+[m[32m      const paragraph = box.querySelector('.homebox-text p');[m
+[32m+[m[32m      const image = box.querySelector('.homebox-img img');[m
+[32m+[m[32m      if (paragraph) paragraph.textContent = row.info_texto || '';[m
+[32m+[m[32m      if (image && row.info_image) {[m
+[32m+[m[32m        image.src = row.info_image;[m
+[32m+[m[32m        image.alt = 'Imagem informativa do Studio Orofacial';[m
+[32m+[m[32m      }[m
+[32m+[m[32m    });[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  function catalogCard(row, index) {[m
+[32m+[m[32m    const modalId = `cms-modal-${row._id || index}`;[m
+[32m+[m[32m    return `<section class="homeleft"><div class="contact-form"><h2><i class="bi bi-envelope"></i>${escapeHtml(row.item_catalogo_titulo)}</h2><div class="form-group"><p>${escapeHtml(row.item_catalogo_descricao_curta)}</p></div></div><div class="form-buttons"><button type="button" class="btn-clear" data-bs-toggle="modal" data-bs-target="#${modalId}"><i class="bi bi-send"></i> Saiba Mais</button><div class="modal fade" id="${modalId}" tabindex="-1" aria-labelledby="${modalId}-label" aria-hidden="true"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h1 class="modal-title fs-5" id="${modalId}-label">${escapeHtml(row.item_catalogo_titulo)}</h1><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div><div class="modal-body"><p>${escapeHtml(row.item_catalogo_descricao_modal || row.item_catalogo_descricao_curta)}</p></div><div class="modal-footer"><button type="button" class="btn btn-clear" data-bs-dismiss="modal">Fechar</button></div></div></div></div></div></div></section>`;[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  async function renderCatalog() {[m
+[32m+[m[32m    const [mainRows, items] = await Promise.all([request('/cms/catalogo_main'), request('/cms/item_catalogo')]);[m
+[32m+[m[32m    const main = first(mainRows);[m
+[32m+[m[32m    if (main) {[m
+[32m+[m[32m      setText('.page-title h1', main.catalogo_Titulo);[m
+[32m+[m[32m      setText('.page-title p', main.catalogo_subtitulo);[m
+[32m+[m[32m    }[m
+[32m+[m[32m    const list = document.getElementById('catalogo-lista');[m
+[32m+[m[32m    if (!list || !items?.length) return;[m
+[32m+[m[32m    let html = '';[m
+[32m+[m[32m    for (let index = 0; index < items.length; index += 2) {[m
+[32m+[m[32m      html += `<div class="catalogo-container">${items.slice(index, index + 2).map((item, offset) => catalogCard(item, index + offset)).join('')}</div>`;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    list.innerHTML = html;[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  function iconMarkup(value) {[m
+[32m+[m[32m    const icon = String(value || '').trim();[m
+[32m+[m[32m    if (!icon) return '<i class="bi bi-stars"></i>';[m
+[32m+[m[32m    if (/^https?:\/\//i.test(icon)) return `<img src="${escapeHtml(icon)}" alt="" style="max-width:32px;max-height:32px">`;[m
+[32m+[m[32m    if (/^(bi|fas|far|fa)\s/.test(icon)) return `<i class="${escapeHtml(icon)}"></i>`;[m
+[32m+[m[32m    return escapeHtml(icon);[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  async function renderAbout() {[m
+[32m+[m[32m    const [mainRows, histories, principles, team, differentials] = await Promise.all([[m
+[32m+[m[32m      request('/cms/sobre_main'), request('/cms/historia'), request('/cms/principios'),[m
+[32m+[m[32m      request('/cms/equipe'), request('/cms/diferenciais'),[m
+[32m+[m[32m    ]);[m
+[32m+[m[32m    const main = first(mainRows);[m
+[32m+[m[32m    if (main) {[m
+[32m+[m[32m      setText('.page-title h1', main.sobre_Titulo);[m
+[32m+[m[32m      setText('.page-title p', main.sobre_subtitulo);[m
+[32m+[m[32m    }[m
+[32m+[m[32m    const history = first(histories);[m
+[32m+[m[32m    const historyContent = document.querySelector('.sobre-historia .sobre-content');[m
+[32m+[m[32m    if (history && historyContent) historyContent.innerHTML = `<p>${escapeHtml(history.Historia_texto)}</p>${history.Historia_Image ? `<div class="sobre-img-container"><img src="${escapeHtml(history.Historia_Image)}" alt="${escapeHtml(history.Historia_titulo || 'História do Studio Orofacial')}" class="sobre-imagem"></div>` : ''}`;[m
+[32m+[m[32m    const principleGrid = document.querySelector('.mvv-grid');[m
+[32m+[m[32m    if (principleGrid && principles?.length) principleGrid.innerHTML = principles.map((row) => `<div class="mvv-item"><div class="mvv-icon">${iconMarkup(row.principios_icone)}</div><h3>${escapeHtml(row.principios_titulo)}</h3><p>${escapeHtml(row.principios_texto)}</p></div>`).join('');[m
+[32m+[m[32m    const teamGrid = document.querySelector('.equipe-grid');[m
+[32m+[m[32m    if (teamGrid && team?.length) teamGrid.innerHTML = team.map((row) => `<div class="equipe-item"><div class="equipe-img">${iconMarkup(row.equipe_image)}</div><h3>${escapeHtml(row.equipe_especialista)}</h3><p class="equipe-cargo">${escapeHtml(row.equipe_universidade)}</p><p class="equipe-desc">${escapeHtml(row.equipe_formacao)}</p></div>`).join('');[m
+[32m+[m[32m    const differentialList = document.querySelector('.diferenciais-list');[m
+[32m+[m[32m    if (differentialList && differentials?.length) differentialList.innerHTML = differentials.map((row) => `<div class="diferencial-item"><i class="bi bi-check-circle"></i><span>${escapeHtml(row.Diferenciais_descricao)}</span></div>`).join('');[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  async function renderContact() {[m
+[32m+[m[32m    const [mainRows, locations, infos] = await Promise.all([request('/cms/contato_main'), request('/cms/localizacao'), request('/cms/contato_info')]);[m
+[32m+[m[32m    const main = first(mainRows);[m
+[32m+[m[32m    if (main) {[m
+[32m+[m[32m      setText('.page-title h1', main.contato_titulo);[m
+[32m+[m[32m      setText('.page-title p', main.contato_subtitulo);[m
+[32m+[m[32m    }[m
+[32m+[m[32m    const location = first(locations);[m
+[32m+[m[32m    if (location) {[m
+[32m+[m[32m      const frame = document.querySelector('.map-frame iframe');[m
+[32m+[m[32m      if (frame && location.localizacao_maps) frame.src = location.localizacao_maps;[m
+[32m+[m[32m      const address = document.querySelector('.address-info');[m
+[32m+[m[32m      if (address) address.innerHTML = `<h3><i class="bi bi-building"></i> Endereço</h3><p>${escapeHtml(location.localizacao_endereco || '')}</p>`;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    const info = first(infos);[m
+[32m+[m[32m    if (info) {[m
+[32m+[m[32m      const box = document.querySelector('.contact-info');[m
+[32m+[m[32m      if (box) box.innerHTML = `<h3><i class="bi bi-info-circle"></i> Outras formas de contato:</h3><p><i class="bi bi-telephone"></i> Telefone: ${escapeHtml(info.contato_info_telefone || '')}</p><p><i class="bi bi-whatsapp"></i> WhatsApp: ${escapeHtml(info.contato_info_whatsapp || '')}</p><p><i class="bi bi-clock"></i> Horário de atendimento: ${escapeHtml(info.contato_info_texto_atendimento || '')}</p>`;[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  async function bindContactForm() {[m
+[32m+[m[32m    const form = document.getElementById('contactForm');[m
+[32m+[m[32m    if (!form) return;[m
+[32m+[m[32m    form.addEventListener('submit', async (event) => {[m
+[32m+[m[32m      event.preventDefault();[m
+[32m+[m[32m      const button = form.querySelector('button[type="submit"]');[m
+[32m+[m[32m      const original = button?.textContent;[m
+[32m+[m[32m      if (button) { button.disabled = true; button.textContent = 'Enviando...'; }[m
+[32m+[m[32m      try {[m
+[32m+[m[32m        await request('/contact/messages', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(form))) });[m
+[32m+[m[32m        form.reset();[m
+[32m+[m[32m        window.alert('Mensagem enviada com sucesso.');[m
+[32m+[m[32m      } catch (error) {[m
+[32m+[m[32m        window.alert(error.message || 'Não foi possível enviar a mensagem.');[m
+[32m+[m[32m      } finally {[m
+[32m+[m[32m        if (button) { button.disabled = false; button.textContent = original; }[m
+[32m+[m[32m      }[m
+[32m+[m[32m    });[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  window.limparFormulario = () => document.getElementById('contactForm')?.reset();[m
+[32m+[m
+[32m+[m[32m  document.addEventListener('DOMContentLoaded', async () => {[m
+[32m+[m[32m    const tasks = [];[m
+[32m+[m[32m    if (document.querySelector('#carouselExampleCaptions')) tasks.push(renderHome());[m
+[32m+[m[32m    if (document.getElementById('catalogo-lista')) tasks.push(renderCatalog());[m
+[32m+[m[32m    if (document.querySelector('.sobre-container')) tasks.push(renderAbout());[m
+[32m+[m[32m    if (document.querySelector('.contact-container')) tasks.push(renderContact());[m
+[32m+[m[32m    tasks.push(bindContactForm());[m
+[32m+[m[32m    const results = await Promise.allSettled(tasks);[m
+[32m+[m[32m    const failure = results.find((result) => result.status === 'rejected');[m
+[32m+[m[32m    if (failure) console.error('Não foi possível carregar o conteúdo do CMS:', failure.reason);[m
+[32m+[m[32m  });[m
+[32m+[m[32m})();[m
+[1mdiff --git a/outros/banco/cms_patch.sql b/outros/banco/cms_patch.sql[m
+[1mnew file mode 100644[m
+[1mindex 0000000..f15f1cf[m
+[1m--- /dev/null[m
+[1m+++ b/outros/banco/cms_patch.sql[m
+[36m@@ -0,0 +1,20 @@[m
+[32m+[m[32mUSE db_studioorofacial;[m
+[32m+[m
+[32m+[m[32m-- Execute uma vez em bases criadas com a versão anterior do main-v2.[m
+[32m+[m[32mALTER TABLE main[m
+[32m+[m[32m  ADD COLUMN page_key VARCHAR(30) NULL AFTER subtitle;[m
+[32m+[m
+[32m+[m[32m-- Mapeamento inicial baseado nos títulos atualmente usados pelos seeds.[m
+[32m+[m[32mUPDATE main[m
+[32m+[m[32m   SET page_key = CASE[m
+[32m+[m[32m     WHEN LOWER(title) LIKE '%catálogo%' OR LOWER(title) LIKE '%catalogo%' THEN 'catalogo'[m
+[32m+[m[32m     WHEN LOWER(title) LIKE '%contato%' OR LOWER(title) LIKE '%contacto%' THEN 'contato'[m
+[32m+[m[32m     WHEN LOWER(title) LIKE '%sobre%' THEN 'sobre'[m
+[32m+[m[32m     ELSE 'home'[m
+[32m+[m[32m   END[m
+[32m+[m[32m WHERE page_key IS NULL;[m
+[32m+[m
+[32m+[m[32mALTER TABLE main[m
+[32m+[m[32m  MODIFY COLUMN page_key VARCHAR(30) NOT NULL;[m
+[32m+[m
+[32m+[m[32mCREATE INDEX idx_main_page_key ON main (page_key);[m
+[1mdiff --git a/outros/banco/criacao_estrutura_tabelas_v2.sql b/outros/banco/criacao_estrutura_tabelas_v2.sql[m
+[1mindex 2fb8fda..f5f07cd 100644[m
+[1m--- a/outros/banco/criacao_estrutura_tabelas_v2.sql[m
+[1m+++ b/outros/banco/criacao_estrutura_tabelas_v2.sql[m
+[36m@@ -25,6 +25,7 @@[m [mCREATE TABLE main[m
+     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,[m
+     title      VARCHAR(150) NOT NULL,[m
+     subtitle   VARCHAR(255) NOT NULL,[m
+[32m+[m[32m    page_key   VARCHAR(30) NOT NULL,[m
+     id_user    INT[m
+ ) ENGINE=InnoDB;[m
+  [m

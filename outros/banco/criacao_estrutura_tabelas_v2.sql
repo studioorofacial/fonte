@@ -25,6 +25,7 @@ CREATE TABLE main
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     title      VARCHAR(150) NOT NULL,
     subtitle   VARCHAR(255) NOT NULL,
+    page_key   VARCHAR(30) NOT NULL,
     id_user    INT
 ) ENGINE=InnoDB;
  

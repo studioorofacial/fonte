@@ -53,11 +53,13 @@ INSERT INTO
     main (
         title,
         subtitle,
+        page_key,
         id_user
     )
 VALUES (
         "Studio Orofacial",
         "Conheça mais sobre nosso ambiente",
+        "home",
         1
     );
 
@@ -65,26 +67,31 @@ INSERT INTO
     main (
         title,
         subtitle,
+        page_key,
         id_user
     )
 VALUES (
         "Studio Orofacial",
         "Conheça mais sobre nosso ambiente",
+        "home",
         1
     ),
     (
         "Catálogo de serviços",
         "Conheça mais nossos procedimentos",
+        "catalogo",
         1
     ),
     (
         "Entre em Contato",
         "Responderemos o mais breve possível",
+        "contato",
         1
     ),
     (
         "Sobre o Studio Orofacial",
         "Conheça nossa história, missão e equipe de especialistas",
+        "sobre",
         1
     );
 

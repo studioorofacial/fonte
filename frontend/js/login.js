@@ -1,32 +1,37 @@
-document.addEventListener("DOMContentLoaded", function(){
-    const formulario = document.getElementById("formLogin")
-    const resultado = document.getElementById("resultado")
-    
-    formulario.addEventListener("submit", function(event){
-        event.preventDefault()
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('formLogin');
+  if (!form) return;
+  const apiBase = window.CMS_API_BASE || (
+    location.protocol === 'file:' || location.hostname.endsWith('github.io')
+      ? 'http://localhost:6000/api'
+      : '/api'
+  );
 
-        const loginUser = document.getElementById("loginID").value
-        const passUser = document.getElementById("passwordID").value
-        // Credenciais valídas
-        const loginSys = "adenilson"
-        const passSys = 123456
-        // Comparação de usuário e senha verdadeira
-        if ( loginSys == loginUser && passSys == passUser) {
-            // Resultado valído.
-            /* resultado.innerHTML = `
-                <h3>Dados Recebidos</h3>
-                <p><strong>Login:</strong> ${loginUser}</p>
-                <p><strong>Senha:</strong> ${passUser}</p>
-            `*/
-            // Falha no login
-            alert("Login realizado com sucesso! ")
-        } else {
-            // Falha no login
-            alert("Usuário ou senha incorreta!")
-        }
-    })
-
-    formulario.addEventListener("reset", function(event){
-        resultado.innerHTML = ``
-    })
-})
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const login = document.getElementById('loginID')?.value.trim();
+    const password = document.getElementById('passwordID')?.value || '';
+    if (!login || !password) {
+      window.alert('Informe o usuário/e-mail e a senha.');
+      return;
+    }
+    const button = form.querySelector('button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(`${apiBase}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ login, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Usuário ou senha incorretos.');
+      sessionStorage.setItem('cms_token', data.token);
+      window.location.href = 'admin.html';
+    } catch (error) {
+      window.alert(error.message || 'Não foi possível autenticar.');
+    } finally {
+      if (button) button.disabled = false;
+    }
+  });
+});
