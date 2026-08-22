@@ -645,16 +645,16 @@ textarea.form-control { resize: vertical; min-height: 90px; }
     <!-- SIDEBAR -->
     <nav class="sidebar">
       <div class="nav-section"><span>Páginas</span></div>
-      <a href="#" class="active" onclick="showPage('home',this)">
+      <a href="#" class="active" onclick="showPage('home',this); carregarMainUnico(1,'home-main')">
         <i class="bi bi-house-fill"></i><span>Home</span>
       </a>
-      <a href="#" onclick="showPage('sobre',this)">
+      <a href="#" onclick="showPage('sobre',this); carregarMainUnico(4,'sobre-main')">
         <i class="bi bi-person-fill"></i><span>Sobre</span>
       </a>
-      <a href="#" onclick="showPage('catalogo',this)">
+      <a href="#" onclick="showPage('catalogo',this); carregarMainUnico(2,'catalogo-main')">
         <i class="bi bi-grid-fill"></i><span>Catálogo</span>
       </a>
-      <a href="#" onclick="showPage('contato',this)">
+      <a href="#" onclick="showPage('contato',this); carregarMainUnico(3,'contato-main')">
         <i class="bi bi-envelope-fill"></i><span>Contato</span>
       </a>
       <div class="nav-section"><span>Sistema</span></div>
@@ -675,50 +675,65 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 
         <!-- TABS -->
         <ul class="nav nav-tabs">
-          <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'home','main')">Home Main</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'home','carousel')">Carousel</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'home','info')">Info</a></li>
+          <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'home','main'); carregarMainUnico(1,'home-main')">Home Main</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'home','carousel'); carregarCarousel()">Carousel</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'home','info'); carregarHomeInfo()">Info</a></li>
         </ul>
         <div class="tab-content">
 
           <div id="home-tab-main" class="tab-pane active">
             <div class="admin-card">
-              <h2><i class="bi bi-pin-map-fill"></i> Home Main <span class="badge-table ms-2">home_main</span></h2>
-              <form onsubmit="handleSubmit(event,'home_main')">
+              <h2><i class="bi bi-pin-map-fill"></i> Home Main <span class="badge-table ms-2">main · id_main = 1</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Banner de topo da Home — registro único, não uma lista.
+              </p>
+              <form onsubmit="salvarMainUnico(event, 1, 'home-main')">
                 <div class="row g-3">
-                  <div class="col-12"><label class="form-label">home_Titulo</label><input type="text" class="form-control" name="home_Titulo" placeholder="Título principal"></div>
-                  <div class="col-12"><label class="form-label">home_subtitulo</label><input type="text" class="form-control" name="home_subtitulo" placeholder="Subtítulo"></div>
+                  <div class="col-12">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" id="home-main-titulo" placeholder="Título principal" required>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Subtítulo</label>
+                    <input type="text" class="form-control" id="home-main-subtitulo" placeholder="Subtítulo">
+                  </div>
                 </div>
                 <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('home_main')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Salvar</button>
+                  <button type="button" class="btn btn-dourado" onclick="carregarMainUnico(1, 'home-main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Desfazer alterações</button>
                 </div>
               </form>
-            </div>
-            <div class="admin-card">
-              <h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">home_main</span></h2>
-              <div class="table-responsive"><table class="table table-bordered table-hover">
-                <thead><tr><th>#</th><th>Título</th><th>Subtítulo</th><th>Ações</th></tr></thead>
-                <tbody id="tb-home_main"><tr><td colspan="4" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
-              </table></div>
             </div>
           </div>
 
           <div id="home-tab-carousel" class="tab-pane">
             <div class="admin-card">
-              <h2><i class="bi bi-images"></i> Home Carousel <span class="badge-table ms-2">home_carousel</span></h2>
-              <form onsubmit="handleSubmit(event,'home_carousel')">
-                <input type="hidden" name="id" value="">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-images"></i> Home Carousel <span class="badge-table ms-2">home_carousel</span></h2>
+                <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioCarousel()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button>
+              </div>
+              <form onsubmit="handleCarouselSubmit(event)" id="form-home-carousel">
+                <input type="hidden" id="carousel-id" value="">
                 <div class="row g-3">
-                  <div class="col-md-6"><label class="form-label">Image_Titulo</label><input type="text" class="form-control" name="Image_Titulo" placeholder="Título do slide"></div>
-                  <div class="col-md-6"><label class="form-label">Image_Backgroud (URL)</label><input type="url" class="form-control" name="Image_Backgroud" placeholder="https://..."></div>
-                  <div class="col-12"><label class="form-label">Image_Descricao</label><textarea class="form-control" name="Image_Descricao" placeholder="Descrição do slide..."></textarea></div>
+                  <div class="col-md-6">
+                    <label class="form-label">Título do slide</label>
+                    <input type="text" class="form-control" id="carousel-titulo" placeholder="Título do slide" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Imagem de fundo (caminho/URL)</label>
+                    <input type="text" class="form-control" id="carousel-background" placeholder="img/1.jpg" required>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Descrição</label>
+                    <textarea class="form-control" id="carousel-descricao" placeholder="Descrição do slide..."></textarea>
+                  </div>
                 </div>
                 <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('home_carousel')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="submit" class="btn btn-roxo" id="carousel-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarCarouselAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioCarousel()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -733,17 +748,28 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 
           <div id="home-tab-info" class="tab-pane">
             <div class="admin-card">
-              <h2><i class="bi bi-info-circle-fill"></i> Home Info <span class="badge-table ms-2">home_info</span></h2>
-              <form onsubmit="handleSubmit(event,'home_info')">
-                <input type="hidden" name="id" value="">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-info-circle-fill"></i> Home Info <span class="badge-table ms-2">home_info</span></h2>
+                <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioHomeInfo()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button>
+              </div>
+              <form onsubmit="handleHomeInfoSubmit(event)" id="form-home-info">
+                <input type="hidden" id="home-info-id" value="">
                 <div class="row g-3">
-                  <div class="col-md-6"><label class="form-label">info_image (URL)</label><input type="url" class="form-control" name="info_image" placeholder="https://..."></div>
-                  <div class="col-12"><label class="form-label">info_texto</label><textarea class="form-control" name="info_texto" placeholder="Texto informativo..."></textarea></div>
+                  <div class="col-md-6">
+                    <label class="form-label">Imagem (caminho/URL)</label>
+                    <input type="text" class="form-control" id="home-info-imagem" placeholder="img/home/home2.jpg">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Texto</label>
+                    <textarea class="form-control" id="home-info-texto" placeholder="Texto informativo..." required></textarea>
+                  </div>
                 </div>
                 <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('home_info')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="submit" class="btn btn-roxo" id="home-info-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarHomeInfoAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioHomeInfo()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
@@ -766,55 +792,71 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <p>Gerencie o conteúdo da página Sobre.</p>
         </div>
         <ul class="nav nav-tabs">
-          <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'sobre','main')">Sobre Main</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'sobre','historia')">História</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'sobre','principios')">Princípios</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'sobre','equipe')">Equipe</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'sobre','diferenciais')">Diferenciais</a></li>
+          <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'sobre','main'); carregarMainUnico(4,'sobre-main')">Sobre Main</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'sobre','historia'); carregarHistoria()">História</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'sobre','principios'); carregarPrincipios()">Princípios</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'sobre','equipe'); carregarEquipe()">Equipe</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'sobre','diferenciais'); carregarDiferenciais()">Diferenciais</a></li>
         </ul>
         <div class="tab-content">
 
           <div id="sobre-tab-main" class="tab-pane active">
             <div class="admin-card">
-              <h2><i class="bi bi-pin-map-fill"></i> Sobre Main <span class="badge-table ms-2">sobre_main</span></h2>
-              <form onsubmit="handleSubmit(event,'sobre_main')">
+              <h2><i class="bi bi-pin-map-fill"></i> Sobre Main <span class="badge-table ms-2">main · id_main = 4</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Banner de topo da página Sobre — registro único, não uma lista.
+              </p>
+              <form onsubmit="salvarMainUnico(event, 4, 'sobre-main')">
                 <div class="row g-3">
-                  <div class="col-md-6"><label class="form-label">sobre_Titulo</label><input type="text" class="form-control" name="sobre_Titulo" placeholder="Título"></div>
-                  <div class="col-md-6"><label class="form-label">sobre_subtitulo</label><input type="text" class="form-control" name="sobre_subtitulo" placeholder="Subtítulo"></div>
+                  <div class="col-md-6">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" id="sobre-main-titulo" placeholder="Título" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Subtítulo</label>
+                    <input type="text" class="form-control" id="sobre-main-subtitulo" placeholder="Subtítulo">
+                  </div>
                 </div>
                 <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('sobre_main')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Salvar</button>
+                  <button type="button" class="btn btn-dourado" onclick="carregarMainUnico(4, 'sobre-main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Desfazer alterações</button>
                 </div>
               </form>
-            </div>
-            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">sobre_main</span></h2>
-              <div class="table-responsive"><table class="table table-bordered table-hover">
-                <thead><tr><th>#</th><th>Título</th><th>Subtítulo</th><th>Ações</th></tr></thead>
-                <tbody id="tb-sobre_main"><tr><td colspan="4" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
-              </table></div>
             </div>
           </div>
 
           <div id="sobre-tab-historia" class="tab-pane">
             <div class="admin-card">
-              <h2><i class="bi bi-book-fill"></i> História <span class="badge-table ms-2">historia</span></h2>
-              <form onsubmit="handleSubmit(event,'historia')">
-                <input type="hidden" name="id" value="">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-book-fill"></i> História <span class="badge-table ms-2">about_history</span></h2>
+                <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioHistoria()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button>
+              </div>
+              <form onsubmit="handleHistoriaSubmit(event)" id="form-historia">
+                <input type="hidden" id="historia-id" value="">
                 <div class="row g-3">
-                  <div class="col-md-6"><label class="form-label">Historia_titulo</label><input type="text" class="form-control" name="Historia_titulo" placeholder="Título"></div>
-                  <div class="col-md-6"><label class="form-label">Historia_Image (URL)</label><input type="url" class="form-control" name="Historia_Image" placeholder="https://..."></div>
-                  <div class="col-12"><label class="form-label">Historia_texto</label><textarea class="form-control" name="Historia_texto" rows="4" placeholder="Texto..."></textarea></div>
+                  <div class="col-md-6">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" id="historia-titulo" placeholder="Título" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Imagem (caminho/URL)</label>
+                    <input type="text" class="form-control" id="historia-imagem" placeholder="img/2024-04-16.jpg">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Texto</label>
+                    <textarea class="form-control" id="historia-texto" rows="4" placeholder="Texto..." required></textarea>
+                  </div>
                 </div>
                 <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('historia')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="submit" class="btn btn-roxo" id="historia-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarHistoriaAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioHistoria()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
-            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">historia</span></h2>
+            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">about_history</span></h2>
               <div class="table-responsive"><table class="table table-bordered table-hover">
                 <thead><tr><th>#</th><th>Título</th><th>Texto</th><th>Imagem</th><th>Ações</th></tr></thead>
                 <tbody id="tb-historia"><tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
@@ -824,22 +866,36 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 
           <div id="sobre-tab-principios" class="tab-pane">
             <div class="admin-card">
-              <h2><i class="bi bi-check-circle-fill"></i> Princípios <span class="badge-table ms-2">principios</span></h2>
-              <form onsubmit="handleSubmit(event,'principios')">
-                <input type="hidden" name="id" value="">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-check-circle-fill"></i> Princípios <span class="badge-table ms-2">about_principles</span></h2>
+                <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioPrincipio()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button>
+              </div>
+              <form onsubmit="handlePrincipioSubmit(event)" id="form-principios">
+                <input type="hidden" id="principio-id" value="">
                 <div class="row g-3">
-                  <div class="col-md-6"><label class="form-label">principios_titulo</label><input type="text" class="form-control" name="principios_titulo" placeholder="Ex: Missão"></div>
-                  <div class="col-md-6"><label class="form-label">principios_icone (emoji ou URL)</label><input type="text" class="form-control" name="principios_icone" placeholder="⭐ ou https://..."></div>
-                  <div class="col-12"><label class="form-label">principios_texto</label><textarea class="form-control" name="principios_texto" placeholder="Descrição..."></textarea></div>
+                  <div class="col-md-6">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" id="principio-titulo" placeholder="Ex: Missão" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Ícone (classe Bootstrap Icons)</label>
+                    <input type="text" class="form-control" id="principio-icone" placeholder="bi bi-bullseye">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Texto</label>
+                    <textarea class="form-control" id="principio-texto" placeholder="Descrição..." required></textarea>
+                  </div>
                 </div>
                 <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('principios')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="submit" class="btn btn-roxo" id="principio-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarPrincipioAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioPrincipio()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
-            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">principios</span></h2>
+            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">about_principles</span></h2>
               <div class="table-responsive"><table class="table table-bordered table-hover">
                 <thead><tr><th>#</th><th>Título</th><th>Texto</th><th>Ícone</th><th>Ações</th></tr></thead>
                 <tbody id="tb-principios"><tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
@@ -849,23 +905,40 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 
           <div id="sobre-tab-equipe" class="tab-pane">
             <div class="admin-card">
-              <h2><i class="bi bi-people-fill"></i> Equipe <span class="badge-table ms-2">equipe</span></h2>
-              <form onsubmit="handleSubmit(event,'equipe')">
-                <input type="hidden" name="id" value="">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-people-fill"></i> Equipe <span class="badge-table ms-2">about_team</span></h2>
+                <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioEquipe()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button>
+              </div>
+              <form onsubmit="handleEquipeSubmit(event)" id="form-equipe">
+                <input type="hidden" id="equipe-id" value="">
                 <div class="row g-3">
-                  <div class="col-md-6"><label class="form-label">equipe_especialista</label><input type="text" class="form-control" name="equipe_especialista" placeholder="Nome"></div>
-                  <div class="col-md-6"><label class="form-label">equipe_universidade</label><input type="text" class="form-control" name="equipe_universidade" placeholder="Universidade"></div>
-                  <div class="col-md-6"><label class="form-label">equipe_formação</label><input type="text" class="form-control" name="equipe_formacao" placeholder="Ex: Odontologia"></div>
-                  <div class="col-md-6"><label class="form-label">equipe_image (URL)</label><input type="url" class="form-control" name="equipe_image" placeholder="https://..."></div>
+                  <div class="col-md-6">
+                    <label class="form-label">Especialista (nome)</label>
+                    <input type="text" class="form-control" id="equipe-especialista" placeholder="Nome" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Universidade / Especialidade</label>
+                    <input type="text" class="form-control" id="equipe-universidade" placeholder="Universidade">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Formação</label>
+                    <input type="text" class="form-control" id="equipe-formacao" placeholder="Ex: Pós-graduada em...">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Imagem (caminho/URL ou ícone Bootstrap)</label>
+                    <input type="text" class="form-control" id="equipe-imagem" placeholder="bi bi-person-circle">
+                  </div>
                 </div>
                 <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('equipe')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="submit" class="btn btn-roxo" id="equipe-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarEquipeAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioEquipe()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
-            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">equipe</span></h2>
+            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">about_team</span></h2>
               <div class="table-responsive"><table class="table table-bordered table-hover">
                 <thead><tr><th>#</th><th>Especialista</th><th>Universidade</th><th>Formação</th><th>Imagem</th><th>Ações</th></tr></thead>
                 <tbody id="tb-equipe"><tr><td colspan="6" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
@@ -875,20 +948,28 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 
           <div id="sobre-tab-diferenciais" class="tab-pane">
             <div class="admin-card">
-              <h2><i class="bi bi-star-fill"></i> Diferenciais <span class="badge-table ms-2">diferenciais</span></h2>
-              <form onsubmit="handleSubmit(event,'diferenciais')">
-                <input type="hidden" name="id" value="">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-star-fill"></i> Diferenciais <span class="badge-table ms-2">about_differentials</span></h2>
+                <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioDiferencial()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button>
+              </div>
+              <form onsubmit="handleDiferencialSubmit(event)" id="form-diferenciais">
+                <input type="hidden" id="diferencial-id" value="">
                 <div class="row g-3">
-                  <div class="col-12"><label class="form-label">Diferenciais_descricao</label><textarea class="form-control" name="Diferenciais_descricao" rows="3" placeholder="Descrição do diferencial..."></textarea></div>
+                  <div class="col-12">
+                    <label class="form-label">Descrição</label>
+                    <textarea class="form-control" id="diferencial-descricao" rows="3" placeholder="Descrição do diferencial..." required></textarea>
+                  </div>
                 </div>
                 <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('diferenciais')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="submit" class="btn btn-roxo" id="diferencial-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarDiferencialAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioDiferencial()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
             </div>
-            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">diferenciais</span></h2>
+            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">about_differentials</span></h2>
               <div class="table-responsive"><table class="table table-bordered table-hover">
                 <thead><tr><th>#</th><th>Descrição</th><th>Ações</th></tr></thead>
                 <tbody id="tb-diferenciais"><tr><td colspan="3" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
@@ -906,7 +987,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <p>Gerencie o conteúdo da página de catálogo.</p>
         </div>
         <ul class="nav nav-tabs">
-          <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'catalogo','main')">Catálogo Main</a></li>
+          <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'catalogo','main'); carregarMainUnico(2,'catalogo-main')">Catálogo Main</a></li>
           <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'catalogo','item'); carregarItens()">Itens</a></li>
           <!-- <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'catalogo','item')">Itens</a></li> -->
         </ul>
@@ -914,7 +995,37 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 
           <div id="catalogo-tab-main" class="tab-pane active">
             <div class="admin-card">
-              <h2><i class="bi bi-pin-map-fill"></i> Catálogo Main <span class="badge-table ms-2">catalogo_main</span></h2>
+              <h2><i class="bi bi-pin-map-fill"></i> Catálogo Main <span class="badge-table ms-2">main · id_main = 2</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Este é o banner de topo da página Catálogo — existe só um registro pra essa página, não uma lista.
+              </p>
+              <form onsubmit="salvarMainUnico(event, 2, 'catalogo-main')">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" id="catalogo-main-titulo" placeholder="Título" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Subtítulo</label>
+                    <input type="text" class="form-control" id="catalogo-main-subtitulo" placeholder="Subtítulo">
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Salvar</button>
+                  <button type="button" class="btn btn-dourado" onclick="carregarMainUnico(2, 'catalogo-main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Desfazer alterações</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div id="catalogo-tab-item" class="tab-pane">
+            <div class="admin-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-card-list"></i> Itens do Catálogo <span class="badge-table ms-2">item_catalogo</span></h2>
+                <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioItem()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button>
+              </div>
               <form onsubmit="handleItemSubmit(event)" id="form-item-catalogo">
                 <input type="hidden" id="item-id" value="">
                 <div class="row g-3">
@@ -937,42 +1048,6 @@ textarea.form-control { resize: vertical; min-height: 90px; }
                   <button type="button" class="btn btn-dourado" onclick="limparFormularioItem()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
                 </div>
               </form>
-              <!-- <form onsubmit="handleSubmit(event,'catalogo_main')">
-                <div class="row g-3">
-                  <div class="col-md-6"><label class="form-label">catalogo_Titulo</label><input type="text" class="form-control" name="catalogo_Titulo" placeholder="Título"></div>
-                  <div class="col-md-6"><label class="form-label">contato_subtitulo</label><input type="text" class="form-control" name="contato_subtitulo" placeholder="Subtítulo"></div>
-                </div>
-                <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('catalogo_main')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
-                </div>
-              </form> -->
-            </div>
-            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">catalogo_main</span></h2>
-              <div class="table-responsive"><table class="table table-bordered table-hover">
-                <thead><tr><th>#</th><th>Título</th><th>Subtítulo</th><th>Ações</th></tr></thead>
-                <tbody id="tb-catalogo_main"><tr><td colspan="4" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
-              </table></div>
-            </div>
-          </div>
-
-          <div id="catalogo-tab-item" class="tab-pane">
-            <div class="admin-card">
-              <h2><i class="bi bi-card-list"></i> Itens do Catálogo <span class="badge-table ms-2">item_catalogo</span></h2>
-              <form onsubmit="handleSubmit(event,'item_catalogo')">
-                <input type="hidden" name="id" value="">
-                <div class="row g-3">
-                  <div class="col-md-6"><label class="form-label">item_catalogo_titulo</label><input type="text" class="form-control" name="item_catalogo_titulo" placeholder="Nome do produto/serviço"></div>
-                  <div class="col-md-6"><label class="form-label">item_catalogo_descricao_curta</label><input type="text" class="form-control" name="item_catalogo_descricao_curta" placeholder="Descrição curta (card)"></div>
-                  <div class="col-12"><label class="form-label">item_catalogo_descricao_modal</label><textarea class="form-control" name="item_catalogo_descricao_modal" rows="4" placeholder="Descrição completa (modal)..."></textarea></div>
-                </div>
-                <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('item_catalogo')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
-                </div>
-              </form>
             </div>
             <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">item_catalogo</span></h2>
               <div class="table-responsive"><table class="table table-bordered table-hover">
@@ -992,7 +1067,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
           <p>Gerencie o conteúdo da página de contato.</p>
         </div>
         <ul class="nav nav-tabs">
-          <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'contato','main')">Contato Main</a></li>
+          <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'contato','main'); carregarMainUnico(3,'contato-main')">Contato Main</a></li>
           <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'contato','mensagem')">Mensagens</a></li>
           <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'contato','localizacao')">Localização</a></li>
           <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'contato','info')">Info Contato</a></li>
@@ -1001,24 +1076,26 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 
           <div id="contato-tab-main" class="tab-pane active">
             <div class="admin-card">
-              <h2><i class="bi bi-pin-map-fill"></i> Contato Main <span class="badge-table ms-2">contato_main</span></h2>
-              <form onsubmit="handleSubmit(event,'contato_main')">
+              <h2><i class="bi bi-pin-map-fill"></i> Contato Main <span class="badge-table ms-2">main · id_main = 3</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Banner de topo da página Contato — registro único, não uma lista.
+              </p>
+              <form onsubmit="salvarMainUnico(event, 3, 'contato-main')">
                 <div class="row g-3">
-                  <div class="col-md-6"><label class="form-label">contato_titulo</label><input type="text" class="form-control" name="contato_titulo" placeholder="Título"></div>
-                  <div class="col-md-6"><label class="form-label">contato_subtitulo</label><input type="text" class="form-control" name="contato_subtitulo" placeholder="Subtítulo"></div>
+                  <div class="col-md-6">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" id="contato-main-titulo" placeholder="Título" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Subtítulo</label>
+                    <input type="text" class="form-control" id="contato-main-subtitulo" placeholder="Subtítulo">
+                  </div>
                 </div>
                 <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('contato_main')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Salvar</button>
+                  <button type="button" class="btn btn-dourado" onclick="carregarMainUnico(3, 'contato-main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Desfazer alterações</button>
                 </div>
               </form>
-            </div>
-            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">contato_main</span></h2>
-              <div class="table-responsive"><table class="table table-bordered table-hover">
-                <thead><tr><th>#</th><th>Título</th><th>Subtítulo</th><th>Ações</th></tr></thead>
-                <tbody id="tb-contato_main"><tr><td colspan="4" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
-              </table></div>
             </div>
           </div>
 
@@ -1264,6 +1341,7 @@ let _bsDelete, _bsEdit;
 window.addEventListener('DOMContentLoaded', () => {
   _bsDelete = new bootstrap.Modal(document.getElementById('modal-delete'));
   _bsEdit   = new bootstrap.Modal(document.getElementById('modal-edit'));
+  restaurarSessao();
 });
 
 function dbGet(t)        { return DB[t] || []; }
@@ -1271,54 +1349,135 @@ function dbInsert(t, r)  { if (!DB[t]) DB[t] = []; r._id = Date.now(); DB[t].pus
 function dbUpdate(t,id,d){ DB[t] = (DB[t]||[]).map(r => r._id==id ? {...r,...d} : r); }
 function dbDelete(t, id) { DB[t] = (DB[t]||[]).filter(r => r._id!=id); }
 
-// Seed super admin padrão
-DB['_admins'] = [{
-  _id:1, admin_nome:'Super Admin', admin_email:'super@admin.com',
-  admin_usuario:'superadmin', admin_senha:'Admin@123',
-  admin_perfil:'super', admin_status:'active',
-  _created: new Date().toLocaleDateString('pt-BR')
-}];
-
+// role_id conforme a tabela "roles" do banco: 1=root, 2=admin, 3=secretaria
 const roleLabels = {
-  super:  { label:'Super Admin', cls:'role-super' },
-  admin:  { label:'Admin',       cls:'role-admin' },
-  editor: { label:'Editor',      cls:'role-editor' },
-  viewer: { label:'Visualizador',cls:'role-viewer' },
+  1: { label:'Root / Super Admin', cls:'role-super' },
+  2: { label:'Admin',              cls:'role-admin' },
+  3: { label:'Secretária',         cls:'role-editor' },
 };
 
 // ============================================================
-// AUTH
+// AUTH — integrado com a API real (JWT access token + refresh cookie)
 // ============================================================
-function doLogin() {
-  const user = document.getElementById('login-user').value.trim();
-  const pass = document.getElementById('login-pass').value;
-  const found = (DB['_admins']||[]).find(a =>
-    (a.admin_usuario===user || a.admin_email===user) &&
-    a.admin_senha===pass && a.admin_status==='active'
-  );
-  if (!found) {
-    document.getElementById('login-error').style.display = 'block';
-    return;
+
+// accessToken fica em sessionStorage: sobrevive a um F5 na mesma aba,
+// mas some ao fechar a aba. O refreshToken (mais sensível) NUNCA fica
+// aqui — ele vive só em cookie httpOnly, o JS nem consegue lê-lo.
+function getAccessToken() {
+  return sessionStorage.getItem('accessToken');
+}
+
+function setSession(accessToken, user) {
+  sessionStorage.setItem('accessToken', accessToken);
+  sessionStorage.setItem('user', JSON.stringify(user));
+}
+
+function clearSession() {
+  sessionStorage.removeItem('accessToken');
+  sessionStorage.removeItem('user');
+}
+
+// Wrapper de fetch que já manda o token e tenta renovautomaticamente
+// se o access token tiver expirado (erro 403 do middleware de auth).
+async function authFetch(url, options = {}) {
+  const doFetch = (token) => fetch(url, {
+    ...options,
+    credentials: 'include',
+    headers: {
+      ...(options.headers || {}),
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  let response = await doFetch(getAccessToken());
+
+  if (response.status === 403) {
+    const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+
+    if (refreshRes.ok) {
+      const { accessToken } = await refreshRes.json();
+      sessionStorage.setItem('accessToken', accessToken);
+      response = await doFetch(accessToken);
+    } else {
+      doLogout();
+    }
   }
-  document.getElementById('login-error').style.display = 'none';
-  currentUser = found;
-  document.getElementById('login-screen').style.display  = 'none';
+
+  return response;
+}
+
+function showPanel(user) {
+  document.getElementById('login-screen').style.display = 'none';
   document.getElementById('panel-screen').style.display  = 'flex';
-  document.getElementById('topbar-name').textContent   = found.admin_nome;
-  document.getElementById('topbar-role').textContent   = roleLabels[found.admin_perfil]?.label || found.admin_perfil;
-  document.getElementById('topbar-avatar').textContent = found.admin_nome.charAt(0).toUpperCase();
-  if (found.admin_perfil === 'super') {
-    document.getElementById('nav-admins').style.display = 'flex';
+  document.getElementById('topbar-name').textContent   = user.name;
+  document.getElementById('topbar-role').textContent   = roleLabels[user.role_id]?.label || 'Usuário';
+  document.getElementById('topbar-avatar').textContent = user.name.charAt(0).toUpperCase();
+  document.getElementById('nav-admins').style.display = (user.role_id === 1) ? 'flex' : 'none';
+  currentUser = user;
+
+  // Home é a página que já vem ativa por padrão ao abrir o painel
+  carregarMainUnico(1, 'home-main');
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const errorBox = document.getElementById('login-error');
+
+  errorBox.style.display = 'none';
+
+  try {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      credentials: 'include', // necessário para o navegador salvar o cookie do refresh token
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      errorBox.style.display = 'block';
+      return;
+    }
+
+    setSession(data.accessToken, data.user);
+    showPanel(data.user);
+  } catch (erro) {
+    console.error('Erro ao fazer login:', erro);
+    errorBox.style.display = 'block';
   }
 }
 
-function doLogout() {
+async function doLogout() {
+  try {
+    await fetch(`${API_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+  } catch (erro) {
+    console.error('Erro ao fazer logout:', erro);
+  }
+
+  clearSession();
   currentUser = null;
   document.getElementById('panel-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
   document.getElementById('nav-admins').style.display = 'none';
+}
+
+// Ao carregar a página, se já tiver uma sessão salva (ex: F5), pula o login
+function restaurarSessao() {
+  const token = getAccessToken();
+  const userRaw = sessionStorage.getItem('user');
+  if (token && userRaw) {
+    showPanel(JSON.parse(userRaw));
+  }
 }
 
 // ============================================================
@@ -1388,8 +1547,7 @@ function renderTable(table) {
       <td>${i+1}</td>
       ${fields.map(f=>`<td title="${r[f]||''}">${trunc(r[f]||'—',35)}</td>`).join('')}
       <td>
-        <button class="btn-sm-roxo me-1" onclick="editarItem(${item.id_item})"><i class="bi bi-pencil-fill"></i> Editar</button>
-        // <button class="btn-sm-roxo me-1" onclick="openEdit('${table}',${r._id})"><i class="bi bi-pencil-fill"></i> Editar</button>
+        <button class="btn-sm-roxo me-1" onclick="openEdit('${table}',${r._id})"><i class="bi bi-pencil-fill"></i> Editar</button>
         <button class="btn-sm-danger"    onclick="confirmDelete('${table}',${r._id})"><i class="bi bi-trash-fill"></i></button>
       </td>
     </tr>`).join('');

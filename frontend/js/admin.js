@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'http://localhost:8080/api';
 
 let itensCache = []; // guarda os itens carregados, pra reaproveitar na edição sem nova requisição
 
@@ -76,23 +76,24 @@ async function handleItemSubmit(event) {
     try {
         if (id) {
             // MODO EDIÇÃO → PUT
-            await fetch(`${API_URL}/item/${id}`, {
+            const response = await authFetch(`${API_URL}/item/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
+            if (!response.ok) throw new Error('Falha ao atualizar');
             showToast('Item atualizado!', 'success');
         } else {
             // MODO CRIAÇÃO → POST
-            // ATENÇÃO: id_user é obrigatório no backend — ainda não temos login real conectado.
-            // Por enquanto, fixamos id_user = 1 (ajustamos isso quando plugarmos o login de verdade).
-            dados.id_user = 1;
+            // id_user vem do usuário logado (salvo no login), não é mais fixo
+            dados.id_user = currentUser?.id_user;
 
-            await fetch(`${API_URL}/item`, {
+            const response = await authFetch(`${API_URL}/item`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
+            if (!response.ok) throw new Error('Falha ao criar');
             showToast('Item criado!', 'success');
         }
 
@@ -117,12 +118,910 @@ async function deletarItemAtual() {
     if (!confirmar) return;
 
     try {
-        await fetch(`${API_URL}/item/${id}`, { method: 'DELETE' });
+        const response = await authFetch(`${API_URL}/item/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Falha ao excluir');
         showToast('Item excluído!', 'danger');
         limparFormularioItem();
         carregarItens();
     } catch (erro) {
         console.error('Erro ao excluir item:', erro);
         showToast('Erro ao excluir item.', 'danger');
+    }
+}
+
+// ============================================================
+// CRUD — HOME CAROUSEL
+// ============================================================
+let carouselCache = [];
+
+async function carregarCarousel() {
+    try {
+        const response = await fetch(`${API_URL}/carousel`);
+        carouselCache = await response.json();
+        renderizarTabelaCarousel(carouselCache);
+    } catch (erro) {
+        console.error('Erro ao carregar carousel:', erro);
+    }
+}
+
+function renderizarTabelaCarousel(itens) {
+    const tbody = document.getElementById('tb-home_carousel');
+
+    if (itens.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = itens.map((item, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${item.title}</td>
+            <td>${item.description || ''}</td>
+            <td>${item.background_image || ''}</td>
+            <td>
+                <button class="btn-sm-roxo me-1" onclick="editarCarousel(${item.id_carousel})">
+                    <i class="bi bi-pencil-fill"></i> Editar
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function editarCarousel(id) {
+    const item = carouselCache.find(i => i.id_carousel === id);
+    if (!item) return;
+
+    document.getElementById('carousel-id').value = item.id_carousel;
+    document.getElementById('carousel-titulo').value = item.title;
+    document.getElementById('carousel-background').value = item.background_image || '';
+    document.getElementById('carousel-descricao').value = item.description || '';
+
+    document.getElementById('carousel-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar';
+    document.getElementById('form-home-carousel').scrollIntoView({ behavior: 'smooth' });
+}
+
+function limparFormularioCarousel() {
+    document.getElementById('carousel-id').value = '';
+    document.getElementById('carousel-titulo').value = '';
+    document.getElementById('carousel-background').value = '';
+    document.getElementById('carousel-descricao').value = '';
+    document.getElementById('carousel-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir';
+}
+
+async function handleCarouselSubmit(event) {
+    event.preventDefault();
+
+    const id = document.getElementById('carousel-id').value;
+    const dados = {
+        title: document.getElementById('carousel-titulo').value,
+        background_image: document.getElementById('carousel-background').value,
+        description: document.getElementById('carousel-descricao').value
+    };
+
+    try {
+        let response;
+        if (id) {
+            response = await authFetch(`${API_URL}/carousel/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao atualizar');
+            showToast('Slide atualizado!', 'success');
+        } else {
+            dados.id_user = currentUser?.id_user;
+            response = await authFetch(`${API_URL}/carousel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao criar');
+            showToast('Slide criado!', 'success');
+        }
+
+        limparFormularioCarousel();
+        carregarCarousel();
+    } catch (erro) {
+        console.error('Erro ao salvar slide:', erro);
+        showToast('Erro ao salvar slide.', 'danger');
+    }
+}
+
+async function deletarCarouselAtual() {
+    const id = document.getElementById('carousel-id').value;
+
+    if (!id) {
+        showToast('Selecione um slide (clique em Editar) antes de deletar.', 'danger');
+        return;
+    }
+
+    if (!confirm('Tem certeza que deseja excluir este slide?')) return;
+
+    try {
+        const response = await authFetch(`${API_URL}/carousel/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Falha ao excluir');
+        showToast('Slide excluído!', 'danger');
+        limparFormularioCarousel();
+        carregarCarousel();
+    } catch (erro) {
+        console.error('Erro ao excluir slide:', erro);
+        showToast('Erro ao excluir slide.', 'danger');
+    }
+}
+
+// ============================================================
+// CRUD — HOME INFO
+// ============================================================
+let homeInfoCache = [];
+
+async function carregarHomeInfo() {
+    try {
+        const response = await fetch(`${API_URL}/home-info`);
+        homeInfoCache = await response.json();
+        renderizarTabelaHomeInfo(homeInfoCache);
+    } catch (erro) {
+        console.error('Erro ao carregar home info:', erro);
+    }
+}
+
+function renderizarTabelaHomeInfo(itens) {
+    const tbody = document.getElementById('tb-home_info');
+
+    if (itens.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Nenhum registro</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = itens.map((item, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${item.text}</td>
+            <td>${item.image || ''}</td>
+            <td>
+                <button class="btn-sm-roxo me-1" onclick="editarHomeInfo(${item.id_info})">
+                    <i class="bi bi-pencil-fill"></i> Editar
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function editarHomeInfo(id) {
+    const item = homeInfoCache.find(i => i.id_info === id);
+    if (!item) return;
+
+    document.getElementById('home-info-id').value = item.id_info;
+    document.getElementById('home-info-imagem').value = item.image || '';
+    document.getElementById('home-info-texto').value = item.text;
+
+    document.getElementById('home-info-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar';
+    document.getElementById('form-home-info').scrollIntoView({ behavior: 'smooth' });
+}
+
+function limparFormularioHomeInfo() {
+    document.getElementById('home-info-id').value = '';
+    document.getElementById('home-info-imagem').value = '';
+    document.getElementById('home-info-texto').value = '';
+    document.getElementById('home-info-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir';
+}
+
+async function handleHomeInfoSubmit(event) {
+    event.preventDefault();
+
+    const id = document.getElementById('home-info-id').value;
+    const dados = {
+        image: document.getElementById('home-info-imagem').value,
+        text: document.getElementById('home-info-texto').value
+    };
+
+    try {
+        let response;
+        if (id) {
+            response = await authFetch(`${API_URL}/home-info/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao atualizar');
+            showToast('Registro atualizado!', 'success');
+        } else {
+            dados.id_user = currentUser?.id_user;
+            response = await authFetch(`${API_URL}/home-info`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao criar');
+            showToast('Registro criado!', 'success');
+        }
+
+        limparFormularioHomeInfo();
+        carregarHomeInfo();
+    } catch (erro) {
+        console.error('Erro ao salvar home info:', erro);
+        showToast('Erro ao salvar registro.', 'danger');
+    }
+}
+
+async function deletarHomeInfoAtual() {
+    const id = document.getElementById('home-info-id').value;
+
+    if (!id) {
+        showToast('Selecione um registro (clique em Editar) antes de deletar.', 'danger');
+        return;
+    }
+
+    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+
+    try {
+        const response = await authFetch(`${API_URL}/home-info/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Falha ao excluir');
+        showToast('Registro excluído!', 'danger');
+        limparFormularioHomeInfo();
+        carregarHomeInfo();
+    } catch (erro) {
+        console.error('Erro ao excluir home info:', erro);
+        showToast('Erro ao excluir registro.', 'danger');
+    }
+}
+
+// ============================================================
+// CRUD — CONTATO INFO (tabela contact_info)
+// ============================================================
+let contatoInfoCache = [];
+
+async function carregarContatoInfo() {
+    try {
+        const response = await fetch(`${API_URL}/info`);
+        contatoInfoCache = await response.json();
+        renderizarTabelaContatoInfo(contatoInfoCache);
+    } catch (erro) {
+        console.error('Erro ao carregar info de contato:', erro);
+    }
+}
+
+function renderizarTabelaContatoInfo(itens) {
+    const tbody = document.getElementById('tb-contato_info');
+
+    if (itens.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = itens.map((item, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${item.phone || ''}</td>
+            <td>${item.whatsapp || ''}</td>
+            <td>${item.service_text || ''}</td>
+            <td>
+                <button class="btn-sm-roxo me-1" onclick="editarContatoInfo(${item.id_info})">
+                    <i class="bi bi-pencil-fill"></i> Editar
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function editarContatoInfo(id) {
+    const item = contatoInfoCache.find(i => i.id_info === id);
+    if (!item) return;
+
+    document.getElementById('contato-info-id').value = item.id_info;
+    document.getElementById('contato-info-telefone').value = item.phone || '';
+    document.getElementById('contato-info-whatsapp').value = item.whatsapp || '';
+    document.getElementById('contato-info-atendimento').value = item.service_text || '';
+
+    document.getElementById('contato-info-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar';
+    document.getElementById('form-contato-info').scrollIntoView({ behavior: 'smooth' });
+}
+
+function limparFormularioContatoInfo() {
+    document.getElementById('contato-info-id').value = '';
+    document.getElementById('contato-info-telefone').value = '';
+    document.getElementById('contato-info-whatsapp').value = '';
+    document.getElementById('contato-info-atendimento').value = '';
+    document.getElementById('contato-info-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir';
+}
+
+async function handleContatoInfoSubmit(event) {
+    event.preventDefault();
+
+    const id = document.getElementById('contato-info-id').value;
+    const dados = {
+        phone: document.getElementById('contato-info-telefone').value,
+        whatsapp: document.getElementById('contato-info-whatsapp').value,
+        service_text: document.getElementById('contato-info-atendimento').value
+    };
+
+    try {
+        let response;
+        if (id) {
+            response = await authFetch(`${API_URL}/info/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao atualizar');
+            showToast('Registro atualizado!', 'success');
+        } else {
+            dados.id_user = currentUser?.id_user;
+            response = await authFetch(`${API_URL}/info`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao criar');
+            showToast('Registro criado!', 'success');
+        }
+
+        limparFormularioContatoInfo();
+        carregarContatoInfo();
+    } catch (erro) {
+        console.error('Erro ao salvar info de contato:', erro);
+        showToast('Erro ao salvar registro.', 'danger');
+    }
+}
+
+async function deletarContatoInfoAtual() {
+    const id = document.getElementById('contato-info-id').value;
+
+    if (!id) {
+        showToast('Selecione um registro (clique em Editar) antes de deletar.', 'danger');
+        return;
+    }
+
+    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+
+    try {
+        const response = await authFetch(`${API_URL}/info/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Falha ao excluir');
+        showToast('Registro excluído!', 'danger');
+        limparFormularioContatoInfo();
+        carregarContatoInfo();
+    } catch (erro) {
+        console.error('Erro ao excluir info de contato:', erro);
+        showToast('Erro ao excluir registro.', 'danger');
+    }
+}
+
+// ============================================================
+// EDITOR DE REGISTRO ÚNICO (tabela "main")
+// ============================================================
+// Algumas tabelas (main, home_info, contato_info, etc.) guardam só
+// UM registro fixo por página, não uma lista. Essas duas funções são
+// genéricas: servem pra Catálogo Main hoje, e reaproveitamos depois
+// pra Home, Contato e Sobre, só trocando o idMain e o prefixo dos ids.
+//
+// idMain  → id_main fixo daquela página (1=home, 2=catálogo, 3=contato, 4=sobre)
+// prefixo → prefixo usado nos ids dos campos no HTML (ex: "catalogo-main")
+
+// Busca o registro na API e preenche o formulário
+async function carregarMainUnico(idMain, prefixo) {
+    try {
+        const response = await fetch(`${API_URL}/main/${idMain}`);
+
+        if (response.status === 404) {
+            // Ainda não existe registro pra essa página (banco novo/sem seed)
+            document.getElementById(`${prefixo}-titulo`).value = '';
+            document.getElementById(`${prefixo}-subtitulo`).value = '';
+            return;
+        }
+
+        const data = await response.json();
+        document.getElementById(`${prefixo}-titulo`).value = data.title || '';
+        document.getElementById(`${prefixo}-subtitulo`).value = data.subtitle || '';
+    } catch (erro) {
+        console.error('Erro ao carregar registro main:', erro);
+        showToast('Erro ao carregar dados.', 'danger');
+    }
+}
+
+// Salva o formulário — tenta atualizar (PUT); se o registro ainda não
+// existir (404, banco novo sem seed), cria (POST) na primeira vez.
+async function salvarMainUnico(event, idMain, prefixo) {
+    event.preventDefault();
+
+    const dados = {
+        title: document.getElementById(`${prefixo}-titulo`).value,
+        subtitle: document.getElementById(`${prefixo}-subtitulo`).value
+    };
+
+    try {
+        let response = await authFetch(`${API_URL}/main/${idMain}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dados)
+        });
+
+        if (response.status === 404) {
+            dados.id_user = currentUser?.id_user;
+            response = await authFetch(`${API_URL}/main`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+        }
+
+        if (!response.ok) throw new Error('Falha ao salvar');
+        showToast('Salvo com sucesso!', 'success');
+    } catch (erro) {
+        console.error('Erro ao salvar main:', erro);
+        showToast('Erro ao salvar.', 'danger');
+    }
+}
+// ============================================================
+// CRUD — HISTÓRIA (Sobre)
+// ============================================================
+let historiaCache = [];
+
+async function carregarHistoria() {
+    try {
+        const response = await fetch(`${API_URL}/history`);
+        historiaCache = await response.json();
+        renderizarTabelaHistoria(historiaCache);
+    } catch (erro) {
+        console.error('Erro ao carregar história:', erro);
+    }
+}
+
+function renderizarTabelaHistoria(itens) {
+    const tbody = document.getElementById('tb-historia');
+
+    if (itens.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = itens.map((item, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${item.title}</td>
+            <td>${trunc(item.text, 80)}</td>
+            <td>${item.image || ''}</td>
+            <td>
+                <button class="btn-sm-roxo me-1" onclick="editarHistoria(${item.id_history})">
+                    <i class="bi bi-pencil-fill"></i> Editar
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function editarHistoria(id) {
+    const item = historiaCache.find(i => i.id_history === id);
+    if (!item) return;
+
+    document.getElementById('historia-id').value = item.id_history;
+    document.getElementById('historia-titulo').value = item.title;
+    document.getElementById('historia-imagem').value = item.image || '';
+    document.getElementById('historia-texto').value = item.text;
+
+    document.getElementById('historia-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar';
+    document.getElementById('form-historia').scrollIntoView({ behavior: 'smooth' });
+}
+
+function limparFormularioHistoria() {
+    document.getElementById('historia-id').value = '';
+    document.getElementById('historia-titulo').value = '';
+    document.getElementById('historia-imagem').value = '';
+    document.getElementById('historia-texto').value = '';
+    document.getElementById('historia-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir';
+}
+
+async function handleHistoriaSubmit(event) {
+    event.preventDefault();
+
+    const id = document.getElementById('historia-id').value;
+    const dados = {
+        title: document.getElementById('historia-titulo').value,
+        image: document.getElementById('historia-imagem').value,
+        text: document.getElementById('historia-texto').value
+    };
+
+    try {
+        let response;
+        if (id) {
+            response = await authFetch(`${API_URL}/history/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao atualizar');
+            showToast('Registro atualizado!', 'success');
+        } else {
+            dados.id_user = currentUser?.id_user;
+            response = await authFetch(`${API_URL}/history`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao criar');
+            showToast('Registro criado!', 'success');
+        }
+
+        limparFormularioHistoria();
+        carregarHistoria();
+    } catch (erro) {
+        console.error('Erro ao salvar história:', erro);
+        showToast('Erro ao salvar registro.', 'danger');
+    }
+}
+
+async function deletarHistoriaAtual() {
+    const id = document.getElementById('historia-id').value;
+
+    if (!id) {
+        showToast('Selecione um registro (clique em Editar) antes de deletar.', 'danger');
+        return;
+    }
+
+    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+
+    try {
+        const response = await authFetch(`${API_URL}/history/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Falha ao excluir');
+        showToast('Registro excluído!', 'danger');
+        limparFormularioHistoria();
+        carregarHistoria();
+    } catch (erro) {
+        console.error('Erro ao excluir história:', erro);
+        showToast('Erro ao excluir registro.', 'danger');
+    }
+}
+
+// ============================================================
+// CRUD — PRINCÍPIOS (Sobre)
+// ============================================================
+let principiosCache = [];
+
+async function carregarPrincipios() {
+    try {
+        const response = await fetch(`${API_URL}/principles`);
+        principiosCache = await response.json();
+        renderizarTabelaPrincipios(principiosCache);
+    } catch (erro) {
+        console.error('Erro ao carregar princípios:', erro);
+    }
+}
+
+function renderizarTabelaPrincipios(itens) {
+    const tbody = document.getElementById('tb-principios');
+
+    if (itens.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = itens.map((item, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${item.title}</td>
+            <td>${trunc(item.text, 80)}</td>
+            <td>${item.icon || ''}</td>
+            <td>
+                <button class="btn-sm-roxo me-1" onclick="editarPrincipio(${item.id_principle})">
+                    <i class="bi bi-pencil-fill"></i> Editar
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function editarPrincipio(id) {
+    const item = principiosCache.find(i => i.id_principle === id);
+    if (!item) return;
+
+    document.getElementById('principio-id').value = item.id_principle;
+    document.getElementById('principio-titulo').value = item.title;
+    document.getElementById('principio-icone').value = item.icon || '';
+    document.getElementById('principio-texto').value = item.text;
+
+    document.getElementById('principio-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar';
+    document.getElementById('form-principios').scrollIntoView({ behavior: 'smooth' });
+}
+
+function limparFormularioPrincipio() {
+    document.getElementById('principio-id').value = '';
+    document.getElementById('principio-titulo').value = '';
+    document.getElementById('principio-icone').value = '';
+    document.getElementById('principio-texto').value = '';
+    document.getElementById('principio-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir';
+}
+
+async function handlePrincipioSubmit(event) {
+    event.preventDefault();
+
+    const id = document.getElementById('principio-id').value;
+    const dados = {
+        title: document.getElementById('principio-titulo').value,
+        icon: document.getElementById('principio-icone').value,
+        text: document.getElementById('principio-texto').value
+    };
+
+    try {
+        let response;
+        if (id) {
+            response = await authFetch(`${API_URL}/principles/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao atualizar');
+            showToast('Registro atualizado!', 'success');
+        } else {
+            dados.id_user = currentUser?.id_user;
+            response = await authFetch(`${API_URL}/principles`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao criar');
+            showToast('Registro criado!', 'success');
+        }
+
+        limparFormularioPrincipio();
+        carregarPrincipios();
+    } catch (erro) {
+        console.error('Erro ao salvar princípio:', erro);
+        showToast('Erro ao salvar registro.', 'danger');
+    }
+}
+
+async function deletarPrincipioAtual() {
+    const id = document.getElementById('principio-id').value;
+
+    if (!id) {
+        showToast('Selecione um registro (clique em Editar) antes de deletar.', 'danger');
+        return;
+    }
+
+    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+
+    try {
+        const response = await authFetch(`${API_URL}/principles/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Falha ao excluir');
+        showToast('Registro excluído!', 'danger');
+        limparFormularioPrincipio();
+        carregarPrincipios();
+    } catch (erro) {
+        console.error('Erro ao excluir princípio:', erro);
+        showToast('Erro ao excluir registro.', 'danger');
+    }
+}
+
+// ============================================================
+// CRUD — EQUIPE (Sobre)
+// ============================================================
+let equipeCache = [];
+
+async function carregarEquipe() {
+    try {
+        const response = await fetch(`${API_URL}/team`);
+        equipeCache = await response.json();
+        renderizarTabelaEquipe(equipeCache);
+    } catch (erro) {
+        console.error('Erro ao carregar equipe:', erro);
+    }
+}
+
+function renderizarTabelaEquipe(itens) {
+    const tbody = document.getElementById('tb-equipe');
+
+    if (itens.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Nenhum registro</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = itens.map((item, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${item.specialist}</td>
+            <td>${item.university || ''}</td>
+            <td>${item.education || ''}</td>
+            <td>${item.image || ''}</td>
+            <td>
+                <button class="btn-sm-roxo me-1" onclick="editarEquipe(${item.id_team})">
+                    <i class="bi bi-pencil-fill"></i> Editar
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function editarEquipe(id) {
+    const item = equipeCache.find(i => i.id_team === id);
+    if (!item) return;
+
+    document.getElementById('equipe-id').value = item.id_team;
+    document.getElementById('equipe-especialista').value = item.specialist;
+    document.getElementById('equipe-universidade').value = item.university || '';
+    document.getElementById('equipe-formacao').value = item.education || '';
+    document.getElementById('equipe-imagem').value = item.image || '';
+
+    document.getElementById('equipe-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar';
+    document.getElementById('form-equipe').scrollIntoView({ behavior: 'smooth' });
+}
+
+function limparFormularioEquipe() {
+    document.getElementById('equipe-id').value = '';
+    document.getElementById('equipe-especialista').value = '';
+    document.getElementById('equipe-universidade').value = '';
+    document.getElementById('equipe-formacao').value = '';
+    document.getElementById('equipe-imagem').value = '';
+    document.getElementById('equipe-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir';
+}
+
+async function handleEquipeSubmit(event) {
+    event.preventDefault();
+
+    const id = document.getElementById('equipe-id').value;
+    const dados = {
+        specialist: document.getElementById('equipe-especialista').value,
+        university: document.getElementById('equipe-universidade').value,
+        education: document.getElementById('equipe-formacao').value,
+        image: document.getElementById('equipe-imagem').value
+    };
+
+    try {
+        let response;
+        if (id) {
+            response = await authFetch(`${API_URL}/team/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao atualizar');
+            showToast('Registro atualizado!', 'success');
+        } else {
+            dados.id_user = currentUser?.id_user;
+            response = await authFetch(`${API_URL}/team`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao criar');
+            showToast('Registro criado!', 'success');
+        }
+
+        limparFormularioEquipe();
+        carregarEquipe();
+    } catch (erro) {
+        console.error('Erro ao salvar membro da equipe:', erro);
+        showToast('Erro ao salvar registro.', 'danger');
+    }
+}
+
+async function deletarEquipeAtual() {
+    const id = document.getElementById('equipe-id').value;
+
+    if (!id) {
+        showToast('Selecione um registro (clique em Editar) antes de deletar.', 'danger');
+        return;
+    }
+
+    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+
+    try {
+        const response = await authFetch(`${API_URL}/team/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Falha ao excluir');
+        showToast('Registro excluído!', 'danger');
+        limparFormularioEquipe();
+        carregarEquipe();
+    } catch (erro) {
+        console.error('Erro ao excluir membro da equipe:', erro);
+        showToast('Erro ao excluir registro.', 'danger');
+    }
+}
+
+// ============================================================
+// CRUD — DIFERENCIAIS (Sobre)
+// ============================================================
+let diferenciaisCache = [];
+
+async function carregarDiferenciais() {
+    try {
+        const response = await fetch(`${API_URL}/differentials`);
+        diferenciaisCache = await response.json();
+        renderizarTabelaDiferenciais(diferenciaisCache);
+    } catch (erro) {
+        console.error('Erro ao carregar diferenciais:', erro);
+    }
+}
+
+function renderizarTabelaDiferenciais(itens) {
+    const tbody = document.getElementById('tb-diferenciais');
+
+    if (itens.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-3">Nenhum registro</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = itens.map((item, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${item.description}</td>
+            <td>
+                <button class="btn-sm-roxo me-1" onclick="editarDiferencial(${item.id_differential})">
+                    <i class="bi bi-pencil-fill"></i> Editar
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function editarDiferencial(id) {
+    const item = diferenciaisCache.find(i => i.id_differential === id);
+    if (!item) return;
+
+    document.getElementById('diferencial-id').value = item.id_differential;
+    document.getElementById('diferencial-descricao').value = item.description;
+
+    document.getElementById('diferencial-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar';
+    document.getElementById('form-diferenciais').scrollIntoView({ behavior: 'smooth' });
+}
+
+function limparFormularioDiferencial() {
+    document.getElementById('diferencial-id').value = '';
+    document.getElementById('diferencial-descricao').value = '';
+    document.getElementById('diferencial-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir';
+}
+
+async function handleDiferencialSubmit(event) {
+    event.preventDefault();
+
+    const id = document.getElementById('diferencial-id').value;
+    const dados = {
+        description: document.getElementById('diferencial-descricao').value
+    };
+
+    try {
+        let response;
+        if (id) {
+            response = await authFetch(`${API_URL}/differentials/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao atualizar');
+            showToast('Registro atualizado!', 'success');
+        } else {
+            dados.id_user = currentUser?.id_user;
+            response = await authFetch(`${API_URL}/differentials`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            if (!response.ok) throw new Error('Falha ao criar');
+            showToast('Registro criado!', 'success');
+        }
+
+        limparFormularioDiferencial();
+        carregarDiferenciais();
+    } catch (erro) {
+        console.error('Erro ao salvar diferencial:', erro);
+        showToast('Erro ao salvar registro.', 'danger');
+    }
+}
+
+async function deletarDiferencialAtual() {
+    const id = document.getElementById('diferencial-id').value;
+
+    if (!id) {
+        showToast('Selecione um registro (clique em Editar) antes de deletar.', 'danger');
+        return;
+    }
+
+    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+
+    try {
+        const response = await authFetch(`${API_URL}/differentials/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Falha ao excluir');
+        showToast('Registro excluído!', 'danger');
+        limparFormularioDiferencial();
+        carregarDiferenciais();
+    } catch (erro) {
+        console.error('Erro ao excluir diferencial:', erro);
+        showToast('Erro ao excluir registro.', 'danger');
     }
 }

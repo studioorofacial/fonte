@@ -3,15 +3,17 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js"
+    "test": "node --check app.js && node --check server.js && node --check src/routes/cmsRoutes.js && node --check scripts/seed-superadmin.js && node --check scripts/create-admin.js",
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "seed:superadmin": "node scripts/seed-superadmin.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -20,5 +22,6 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
-  }
+  },
+  "description": ""
 }

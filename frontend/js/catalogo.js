@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3001/api';
+// API_URL já vem declarada globalmente pelo js/script.js (carregado antes deste arquivo)
 
 // Busca os itens da API
 async function buscarItens() {

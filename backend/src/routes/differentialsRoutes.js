@@ -7,11 +7,12 @@ const {
     editDifferential,
     removeDifferential
 } = require('../controllers/differentialsControllers.js');
+const { authenticate } = require('../middlewares/authLoginMiddleware');
 
 router.get('/differentials', listDifferentials);
 router.get('/differentials/:id', showDifferential);
-router.post('/differentials', storeDifferential);
-router.put('/differentials/:id', editDifferential);
-router.delete('/differentials/:id', removeDifferential);
+router.post('/differentials', authenticate, storeDifferential);
+router.put('/differentials/:id', authenticate, editDifferential);
+router.delete('/differentials/:id', authenticate, removeDifferential);
 
 module.exports = router;
