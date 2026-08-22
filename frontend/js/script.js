@@ -1,9 +1,11 @@
 (() => {
-  const API_BASE = window.CMS_API_BASE || (
-    location.protocol === 'file:' || location.hostname.endsWith('github.io')
-      ? 'http://localhost:6000/api'
-      : '/api'
-  );
+  // const API_BASE = window.CMS_API_BASE || (
+  //   location.protocol === 'file:' || location.hostname.endsWith('github.io')
+  //     ? 'http://localhost:6000/api'
+  //     : '/api'
+  // );
+  const API_BASE = window.CMS_API_BASE || 'http://localhost:6000/api';
+
 
   async function request(path, options = {}) {
     const headers = new Headers(options.headers || {});

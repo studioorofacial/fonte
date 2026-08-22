@@ -114,8 +114,12 @@ function roleSlug(roleName = '') {
   return Object.entries(ROLE_ALIASES).find(([, aliases]) => aliases.includes(name))?.[0] || name || 'viewer';
 }
 
+function isSuperAdmin(user) {
+  return Number(user?.id_user) === 1 || roleSlug(user?.name_role) === 'super';
+}
+
 function publicUser(user) {
-  const role = roleSlug(user.name_role);
+  const role = isSuperAdmin(user) ? 'super' : roleSlug(user.name_role);
   return {
     _id: user.id_user,
     admin_nome: user.name || '',
@@ -170,12 +174,12 @@ async function requireAuth(req, res, next) {
 }
 
 function requireContentWrite(req, res, next) {
-  if (roleSlug(req.user.name_role) === 'viewer') return res.status(403).json({ error: 'O perfil atual não pode alterar conteúdo.' });
+  if (!isSuperAdmin(req.user) && roleSlug(req.user.name_role) === 'viewer') return res.status(403).json({ error: 'O perfil atual não pode alterar conteúdo.' });
   next();
 }
 
 function requireSuper(req, res, next) {
-  if (roleSlug(req.user.name_role) !== 'super') return res.status(403).json({ error: 'Apenas Super Admin pode gerir administradores.' });
+  if (!isSuperAdmin(req.user)) return res.status(403).json({ error: 'Apenas Super Admin pode gerir administradores.' });
   next();
 }
 

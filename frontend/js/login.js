@@ -1,11 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('formLogin');
   if (!form) return;
-  const apiBase = window.CMS_API_BASE || (
-    location.protocol === 'file:' || location.hostname.endsWith('github.io')
-      ? 'http://localhost:6000/api'
-      : '/api'
-  );
+  const API_BASE = window.CMS_API_BASE || 'http://localhost:6000/api';
+
+  // const apiBase = window.CMS_API_BASE || (
+  //   location.protocol === 'file:' || location.hostname.endsWith('github.io')
+  //     ? 'http://localhost:6000/api'
+  //     : '/api'
+  // );
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();

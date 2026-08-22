@@ -1,9 +1,13 @@
 (() => {
-  const API_BASE = window.CMS_API_BASE || (
-    location.protocol === 'file:' || location.hostname.endsWith('github.io')
-      ? 'http://localhost:6000/api'
-      : '/api'
-  );
+  // const API_BASE = window.CMS_API_BASE || (
+  //   location.protocol === 'file:' || location.hostname.endsWith('github.io')
+  //     ? 'http://localhost:6000/api'
+  //     : '/api'
+  // );
+  // const API_BASE = window.CMS_API_BASE || 'http://localhost:6000/api';
+const API_BASE = '/api';
+
+
   const DB = {};
   const state = { user: null, token: sessionStorage.getItem('cms_token') || '', deleteCtx: null };
   let deleteModal;
