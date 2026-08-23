@@ -1348,3 +1348,262 @@ async function salvarLocalizacao(event) {
         showToast('Erro ao salvar.', 'danger');
     }
 }
+
+// ============================================================
+// ADMINISTRADORES — CRUD real (tabela users)
+// ============================================================
+let adminsCache = [];
+
+async function carregarAdmins() {
+    try {
+        const response = await authFetch(`${API_URL}/users`);
+        if (!response.ok) throw new Error('Falha ao carregar administradores');
+        adminsCache = await response.json();
+        renderAdmins();
+        renderAdminStats();
+    } catch (erro) {
+        console.error('Erro ao carregar administradores:', erro);
+        showToast('Erro ao carregar administradores.', 'danger');
+    }
+}
+
+function renderAdmins() {
+    const search = (document.getElementById('admin-search')?.value || '').toLowerCase();
+    const perfil = document.getElementById('admin-filter-perfil')?.value || '';
+    const status = document.getElementById('admin-filter-status')?.value || '';
+
+    let lista = adminsCache;
+    if (search) lista = lista.filter(a => `${a.name} ${a.email} ${a.login}`.toLowerCase().includes(search));
+    if (perfil) lista = lista.filter(a => String(a.role_id) === perfil);
+    if (status) lista = lista.filter(a => String(a.status) === status);
+
+    const grid = document.getElementById('admin-grid');
+    const tbody = document.getElementById('tb-admins');
+
+    if (lista.length === 0) {
+        if (grid) grid.innerHTML = '<div class="col-12 text-muted">Nenhum administrador encontrado.</div>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Nenhum registro</td></tr>';
+        return;
+    }
+
+    if (grid) {
+        grid.innerHTML = lista.map(a => {
+            const r = roleLabels[a.role_id] || { label: 'Desconhecido', cls: 'role-viewer' };
+            const initials = (a.name || '').split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+            const isMe = currentUser && a.id_user === currentUser.id_user;
+            const ativo = Number(a.status) === 1;
+
+            return `<div class="col-md-4 col-sm-6">
+                <div class="user-card">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="avatar">${initials}</div>
+                        <div class="overflow-hidden">
+                            <div class="user-card-name">${a.name}${isMe ? ' <span class="badge" style="background:var(--roxo);font-size:9px">você</span>' : ''}</div>
+                            <div class="user-card-email">${a.email}</div>
+                        </div>
+                    </div>
+                    <div class="text-muted" style="font-size:12px">@${a.login}</div>
+                    <div class="user-card-footer">
+                        <div>
+                            <span class="role-badge ${r.cls}">${r.label}</span>
+                            <span style="font-size:12px;margin-left:6px">
+                                <span class="status-dot ${ativo ? 'active' : 'inactive'}"></span>${ativo ? 'Ativo' : 'Inativo'}
+                            </span>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <button class="btn-sm-roxo" onclick="editarAdmin(${a.id_user})"><i class="bi bi-pencil-fill"></i></button>
+                            <button class="btn-sm-danger" onclick="deletarAdmin(${a.id_user})" ${isMe ? 'disabled' : ''}><i class="bi bi-trash-fill"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    if (tbody) {
+        tbody.innerHTML = lista.map((a, i) => {
+            const r = roleLabels[a.role_id] || { label: 'Desconhecido', cls: 'role-viewer' };
+            const isMe = currentUser && a.id_user === currentUser.id_user;
+            const ativo = Number(a.status) === 1;
+
+            return `<tr>
+                <td>${i + 1}</td>
+                <td>${a.name}${isMe ? ' <span class="badge" style="background:var(--roxo);font-size:9px">você</span>' : ''}</td>
+                <td><code style="background:var(--roxo-pale);padding:2px 7px;border-radius:4px;font-size:12px;color:var(--roxo)">@${a.login}</code></td>
+                <td>${a.email}</td>
+                <td><span class="role-badge ${r.cls}">${r.label}</span></td>
+                <td><span class="status-dot ${ativo ? 'active' : 'inactive'}"></span>${ativo ? 'Ativo' : 'Inativo'}</td>
+                <td style="font-size:12px;color:#999">${a.created_at ? new Date(a.created_at).toLocaleDateString('pt-BR') : '—'}</td>
+                <td>
+                    <div class="d-flex gap-1">
+                        <button class="btn-sm-roxo" onclick="editarAdmin(${a.id_user})"><i class="bi bi-pencil-fill"></i> Editar</button>
+                        <button class="btn-sm-danger" onclick="deletarAdmin(${a.id_user})" ${isMe ? 'disabled' : ''}><i class="bi bi-trash-fill"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+}
+
+function renderAdminStats() {
+    const el = document.getElementById('admin-stats');
+    if (!el) return;
+
+    const mk = (icon, label, val, color) => `<div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">${icon}</div>
+            <div class="stat-value" style="color:${color}">${val}</div>
+            <div class="stat-label">${label}</div>
+        </div>
+    </div>`;
+
+    el.innerHTML =
+        mk('<i class="bi bi-people-fill" style="color:var(--roxo)"></i>', 'Total', adminsCache.length, 'var(--roxo)') +
+        mk('<i class="bi bi-check-circle-fill" style="color:#198754"></i>', 'Ativos', adminsCache.filter(a => Number(a.status) === 1).length, '#198754') +
+        mk('<i class="bi bi-shield-fill" style="color:var(--dourado)"></i>', 'Root / Super Admin', adminsCache.filter(a => Number(a.role_id) === 1).length, 'var(--dourado)') +
+        mk('<i class="bi bi-person-badge-fill" style="color:#5a7fcc"></i>', 'Secretárias', adminsCache.filter(a => Number(a.role_id) === 3).length, '#5a7fcc');
+}
+
+function editarAdmin(id) {
+    const a = adminsCache.find(x => x.id_user === id);
+    if (!a) return;
+
+    document.getElementById('admin-form-id').value = a.id_user;
+    document.getElementById('af-nome').value = a.name;
+    document.getElementById('af-email').value = a.email;
+    document.getElementById('af-usuario').value = a.login;
+    document.getElementById('af-telefone').value = a.phone || '';
+    document.getElementById('af-perfil').value = a.role_id;
+    document.getElementById('af-status').value = a.status;
+    document.getElementById('af-senha').value = '';
+    document.getElementById('af-senha2').value = '';
+
+    document.getElementById('admin-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Salvar Alterações';
+    document.getElementById('pw-hint').textContent = 'Deixe em branco para manter a senha atual.';
+    document.querySelector('#page-admins .admin-card').scrollIntoView({ behavior: 'smooth' });
+}
+
+function resetAdminForm() {
+    document.getElementById('admin-form-id').value = '';
+    ['af-nome', 'af-email', 'af-usuario', 'af-telefone', 'af-senha', 'af-senha2'].forEach(id => {
+        document.getElementById(id).value = '';
+    });
+    document.getElementById('af-perfil').value = '2';
+    document.getElementById('af-status').value = '1';
+    document.getElementById('admin-form-btn').innerHTML = '<i class="bi bi-person-plus-fill me-1"></i>Cadastrar Administrador';
+    document.getElementById('pw-bar').className = 'pw-bar';
+    document.getElementById('pw-hint').textContent = '';
+}
+
+async function handleAdminSubmit(event) {
+    event.preventDefault();
+
+    const id = document.getElementById('admin-form-id').value;
+    const nome = document.getElementById('af-nome').value.trim();
+    const email = document.getElementById('af-email').value.trim();
+    const login = document.getElementById('af-usuario').value.trim();
+    const telefone = document.getElementById('af-telefone').value.trim();
+    const perfil = document.getElementById('af-perfil').value;
+    const status = document.getElementById('af-status').value;
+    const senha = document.getElementById('af-senha').value;
+    const senha2 = document.getElementById('af-senha2').value;
+
+    if (!nome || !email || !login || !telefone) {
+        showToast('Preencha nome, e-mail, usuário e telefone.', 'danger');
+        return;
+    }
+
+    if (!validarTelefone(telefone)) {
+        showToast('Telefone em formato inválido. Use (11) 98888-7777.', 'danger');
+        return;
+    }
+
+    if (senha && senha !== senha2) {
+        showToast('As senhas não conferem!', 'danger');
+        return;
+    }
+    if (senha && senha.length < 6) {
+        showToast('A senha deve ter no mínimo 6 caracteres.', 'danger');
+        return;
+    }
+
+    try {
+        if (id) {
+            // MODO EDIÇÃO
+            const response = await authFetch(`${API_URL}/users/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: nome, email, login, phone: telefone,
+                    role_id: Number(perfil), status: Number(status)
+                })
+            });
+
+            if (!response.ok) {
+                const erroBody = await response.json().catch(() => ({}));
+                throw new Error(erroBody.error || 'Falha ao atualizar');
+            }
+
+            if (senha) {
+                const respSenha = await authFetch(`${API_URL}/users/${id}/senha`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: senha })
+                });
+                if (!respSenha.ok) throw new Error('Dados atualizados, mas falhou ao trocar a senha.');
+            }
+
+            showToast('Administrador atualizado!', 'success');
+        } else {
+            // MODO CRIAÇÃO
+            if (!senha) {
+                showToast('Informe uma senha.', 'danger');
+                return;
+            }
+
+            const response = await authFetch(`${API_URL}/users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: nome, email, login, password: senha,
+                    phone: telefone, role_id: Number(perfil)
+                })
+            });
+
+            if (!response.ok) {
+                const erroBody = await response.json().catch(() => ({}));
+                throw new Error(erroBody.error || 'Falha ao criar');
+            }
+
+            showToast('Administrador cadastrado!', 'success');
+        }
+
+        resetAdminForm();
+        carregarAdmins();
+    } catch (erro) {
+        console.error('Erro ao salvar administrador:', erro);
+        showToast(erro.message || 'Erro ao salvar administrador.', 'danger');
+    }
+}
+
+async function deletarAdmin(id) {
+    if (currentUser && id === currentUser.id_user) {
+        showToast('Não é possível excluir a própria conta!', 'danger');
+        return;
+    }
+
+    if (!confirm('Tem certeza que deseja excluir este administrador?')) return;
+
+    try {
+        const response = await authFetch(`${API_URL}/users/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+            const erroBody = await response.json().catch(() => ({}));
+            throw new Error(erroBody.error || 'Falha ao excluir');
+        }
+        showToast('Administrador excluído!', 'danger');
+        carregarAdmins();
+    } catch (erro) {
+        console.error('Erro ao excluir administrador:', erro);
+        showToast(erro.message || 'Erro ao excluir administrador.', 'danger');
+    }
+}

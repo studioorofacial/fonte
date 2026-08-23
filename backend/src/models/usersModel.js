@@ -3,7 +3,7 @@ const pool = require('../database/connection');
 // Busca todos os usuários (nunca retorna a senha)
 async function getAllUsers() {
     const [rows] = await pool.query(
-        'SELECT id_user, name, email, phone, role_id, status, created_at, updated_at FROM users'
+        'SELECT id_user, name, email, login, phone, role_id, status, created_at, updated_at FROM users'
     );
     return rows;
 }
@@ -11,7 +11,7 @@ async function getAllUsers() {
 // Busca um usuário pelo id (nunca retorna a senha)
 async function getUserById(id) {
     const [rows] = await pool.query(
-        'SELECT id_user, name, email, phone, role_id, status, created_at, updated_at FROM users WHERE id_user = ?',
+        'SELECT id_user, name, email, login, phone, role_id, status, created_at, updated_at FROM users WHERE id_user = ?',
         [id]
     );
     return rows[0];
@@ -23,20 +23,26 @@ async function getUserByEmail(email) {
     return rows[0];
 }
 
+// Busca um usuário pelo login (usado pra checar duplicidade)
+async function getUserByLogin(login) {
+    const [rows] = await pool.query('SELECT * FROM users WHERE login = ?', [login]);
+    return rows[0];
+}
+
 // Insere um novo usuário — a senha que chega aqui já deve estar em hash
-async function createUser(name, email, hashedPassword, phone, role_id) {
+async function createUser(name, email, login, hashedPassword, phone, role_id) {
     const [result] = await pool.query(
-        'INSERT INTO users (name, email, password, phone, role_id) VALUES (?, ?, ?, ?, ?)',
-        [name, email, hashedPassword, phone, role_id]
+        'INSERT INTO users (name, email, login, password, phone, role_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [name, email, login, hashedPassword, phone, role_id]
     );
     return result.insertId;
 }
 
 // Atualiza dados cadastrais do usuário (não mexe na senha)
-async function updateUser(id, name, email, phone, role_id, status) {
+async function updateUser(id, name, email, login, phone, role_id, status) {
     const [result] = await pool.query(
-        'UPDATE users SET name = ?, email = ?, phone = ?, role_id = ?, status = ? WHERE id_user = ?',
-        [name, email, phone, role_id, status, id]
+        'UPDATE users SET name = ?, email = ?, login = ?, phone = ?, role_id = ?, status = ? WHERE id_user = ?',
+        [name, email, login, phone, role_id, status, id]
     );
     return result.affectedRows;
 }
@@ -69,6 +75,7 @@ module.exports = {
     getAllUsers,
     getUserById,
     getUserByEmail,
+    getUserByLogin,
     createUser,
     updateUser,
     updateUserPassword,

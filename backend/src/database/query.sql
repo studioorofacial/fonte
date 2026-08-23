@@ -17,14 +17,16 @@ INSERT INTO
     users (
         name,
         email,
+        login,
         password,
         phone,
         status,
         role_id
     )
 VALUES (
-        "superadmin",
+        "Super Admin",
         "superadmin@email.com",
+        "superadmin",
         "123456",
         "(11) 25143-6521",
         1,
@@ -33,6 +35,7 @@ VALUES (
     (
         "Maria Silva",
         "maria_silva@email.com",
+        "maria.silva",
         "123456",
         "(11) 25143-6521",
         1,
@@ -41,6 +44,7 @@ VALUES (
     (
         "Carlos Pereira",
         "carlos_pereira@email.com",
+        "carlos.pereira",
         "123456",
         "(11) 25143-6521",
         1,

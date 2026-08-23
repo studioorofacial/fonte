@@ -668,7 +668,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
         <i class="bi bi-person-fill"></i><span>Sobre</span>
       </a>
       <div class="nav-section"><span>Sistema</span></div>
-      <a href="#" id="nav-admins" style="display:none" onclick="showPage('admins',this)">
+      <a href="#" id="nav-admins" style="display:none" onclick="showPage('admins',this); carregarAdmins()">
         <i class="bi bi-shield-lock-fill"></i><span>Administradores</span>
       </a>
     </nav>
@@ -1221,24 +1221,25 @@ textarea.form-control { resize: vertical; min-height: 90px; }
               <div class="col-md-6"><label class="form-label">Nome Completo</label><input type="text" class="form-control" id="af-nome" placeholder="Ex: Dra. Nátali Menezes" required></div>
               <div class="col-md-6"><label class="form-label">E-mail</label><input type="email" class="form-control" id="af-email" placeholder="natali@studio.com" required></div>
               <div class="col-md-4"><label class="form-label">Usuário (login)</label><input type="text" class="form-control" id="af-usuario" placeholder="natali.menezes" required></div>
+              <div class="col-md-4"><label class="form-label">Telefone</label><input type="tel" class="form-control" id="af-telefone" placeholder="(11) 98888-7777" maxlength="15" oninput="mascararTelefone(this)" required></div>
               <div class="col-md-4"><label class="form-label">Perfil de Acesso</label>
                 <select class="form-select" id="af-perfil">
-                  <option value="super">🟣 Super Admin</option>
-                  <option value="admin" selected>🔵 Admin</option>
-                  <option value="editor">🟢 Editor</option>
-                  <option value="viewer">⚪ Visualizador</option>
+                  <option value="1">🟣 Root / Super Admin</option>
+                  <option value="2" selected>🔵 Admin</option>
+                  <option value="3">🟢 Secretária</option>
                 </select>
               </div>
-              <div class="col-md-4"><label class="form-label">Status</label>
+              <div class="col-md-6"><label class="form-label">Status</label>
                 <select class="form-select" id="af-status">
-                  <option value="active">✅ Ativo</option>
-                  <option value="inactive">🚫 Inativo</option>
+                  <option value="1">✅ Ativo</option>
+                  <option value="0">🚫 Inativo</option>
                 </select>
               </div>
+              <div class="col-md-6"></div>
               <div class="col-md-6">
                 <label class="form-label">Senha</label>
                 <div class="input-group">
-                  <input type="password" class="form-control" id="af-senha" placeholder="Mínimo 8 caracteres" oninput="checkStrength(this)">
+                  <input type="password" class="form-control" id="af-senha" placeholder="Mínimo 6 caracteres" oninput="checkStrength(this)">
                   <button class="btn btn-outline-secondary" type="button" onclick="togglePw('af-senha',this)"><i class="bi bi-eye"></i></button>
                 </div>
                 <div class="pw-bar" id="pw-bar"><span></span><span></span><span></span><span></span></div>
@@ -1267,17 +1268,16 @@ textarea.form-control { resize: vertical; min-height: 90px; }
             <div class="col-md-3">
               <select class="form-select" id="admin-filter-perfil" onchange="renderAdmins()">
                 <option value="">Todos os perfis</option>
-                <option value="super">Super Admin</option>
-                <option value="admin">Admin</option>
-                <option value="editor">Editor</option>
-                <option value="viewer">Visualizador</option>
+                <option value="1">Root / Super Admin</option>
+                <option value="2">Admin</option>
+                <option value="3">Secretária</option>
               </select>
             </div>
             <div class="col-md-3">
               <select class="form-select" id="admin-filter-status" onchange="renderAdmins()">
                 <option value="">Todos os status</option>
-                <option value="active">Ativo</option>
-                <option value="inactive">Inativo</option>
+                <option value="1">Ativo</option>
+                <option value="0">Inativo</option>
               </select>
             </div>
           </div>
@@ -1623,172 +1623,10 @@ function doDelete() {
   if (!deleteCtx) return;
   if (deleteCtx.id) {
     dbDelete(deleteCtx.table, deleteCtx.id);
-    if (deleteCtx.table==='_admins') { renderAdmins(); renderAdminStats(); }
-    else renderTable(deleteCtx.table);
+    renderTable(deleteCtx.table);
     showToast('Registro excluído!','danger');
   }
   _bsDelete.hide();
-}
-
-// ============================================================
-// ADMIN CRUD
-// ============================================================
-function handleAdminSubmit(e) {
-  e.preventDefault();
-  const id      = document.getElementById('admin-form-id').value;
-  const nome    = document.getElementById('af-nome').value.trim();
-  const email   = document.getElementById('af-email').value.trim();
-  const usuario = document.getElementById('af-usuario').value.trim();
-  const perfil  = document.getElementById('af-perfil').value;
-  const senha   = document.getElementById('af-senha').value;
-  const senha2  = document.getElementById('af-senha2').value;
-  const status  = document.getElementById('af-status').value;
-
-  if (!nome||!email||!usuario) { showToast('Preencha nome, e-mail e usuário.','danger'); return; }
-  const admins = DB['_admins']||[];
-  const dup = admins.find(a=>a._id!=id&&(a.admin_email===email||a.admin_usuario===usuario));
-  if (dup) { showToast('E-mail ou usuário já cadastrado!','danger'); return; }
-
-  if (id) {
-    if (senha) {
-      if (senha!==senha2){ showToast('As senhas não conferem!','danger'); return; }
-      if (senha.length<8){ showToast('Mínimo 8 caracteres.','danger'); return; }
-    }
-    DB['_admins'] = admins.map(a => a._id==id ? {
-      ...a, admin_nome:nome, admin_email:email, admin_usuario:usuario,
-      admin_perfil:perfil, admin_status:status,
-      ...(senha?{admin_senha:senha}:{})
-    } : a);
-    showToast('Administrador atualizado!','success');
-  } else {
-    if (!senha)          { showToast('Informe uma senha.','danger'); return; }
-    if (senha!==senha2)  { showToast('As senhas não conferem!','danger'); return; }
-    if (senha.length<8)  { showToast('Mínimo 8 caracteres.','danger'); return; }
-    DB['_admins'].push({
-      _id:Date.now(), admin_nome:nome, admin_email:email, admin_usuario:usuario,
-      admin_senha:senha, admin_perfil:perfil, admin_status:status,
-      _created:new Date().toLocaleDateString('pt-BR')
-    });
-    showToast('Administrador cadastrado!','success');
-  }
-  resetAdminForm(); renderAdmins(); renderAdminStats();
-}
-
-function resetAdminForm() {
-  document.getElementById('admin-form-id').value='';
-  ['af-nome','af-email','af-usuario','af-senha','af-senha2'].forEach(id=>{ document.getElementById(id).value=''; });
-  document.getElementById('af-perfil').value='admin';
-  document.getElementById('af-status').value='active';
-  document.getElementById('admin-form-btn').innerHTML='<i class="bi bi-person-plus-fill me-1"></i>Cadastrar Administrador';
-  document.getElementById('pw-bar').className='pw-bar';
-  document.getElementById('pw-hint').textContent='';
-}
-
-function editAdmin(id) {
-  const a=(DB['_admins']||[]).find(x=>x._id==id);
-  if (!a) return;
-  document.getElementById('admin-form-id').value=a._id;
-  document.getElementById('af-nome').value=a.admin_nome;
-  document.getElementById('af-email').value=a.admin_email;
-  document.getElementById('af-usuario').value=a.admin_usuario;
-  document.getElementById('af-perfil').value=a.admin_perfil;
-  document.getElementById('af-status').value=a.admin_status;
-  document.getElementById('af-senha').value='';
-  document.getElementById('af-senha2').value='';
-  document.getElementById('admin-form-btn').innerHTML='<i class="bi bi-floppy-fill me-1"></i>Salvar Alterações';
-  document.getElementById('pw-hint').textContent='Deixe em branco para manter a senha atual.';
-  document.querySelector('#page-admins .admin-card').scrollIntoView({behavior:'smooth'});
-}
-
-function deleteAdmin(id) {
-  if (id==(currentUser&&currentUser._id)) { showToast('Não é possível excluir a própria conta!','danger'); return; }
-  deleteCtx={table:'_admins',id};
-  _bsDelete.show();
-}
-
-function renderAdmins() {
-  const search=(document.getElementById('admin-search')?.value||'').toLowerCase();
-  const perfil=document.getElementById('admin-filter-perfil')?.value||'';
-  const status=document.getElementById('admin-filter-status')?.value||'';
-  let list=DB['_admins']||[];
-  if(search) list=list.filter(a=>(a.admin_nome+a.admin_email+a.admin_usuario).toLowerCase().includes(search));
-  if(perfil) list=list.filter(a=>a.admin_perfil===perfil);
-  if(status) list=list.filter(a=>a.admin_status===status);
-  const isSup=currentUser&&currentUser.admin_perfil==='super';
-
-  // Cards
-  const grid=document.getElementById('admin-grid');
-  if(grid){
-    grid.innerHTML=list.length ? list.map(a=>{
-      const r=roleLabels[a.admin_perfil]||{label:a.admin_perfil,cls:'role-viewer'};
-      const initials=a.admin_nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
-      const isMe=currentUser&&a._id==currentUser._id;
-      return `<div class="col-md-4 col-sm-6">
-        <div class="user-card">
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <div class="avatar">${initials}</div>
-            <div class="overflow-hidden">
-              <div class="user-card-name">${a.admin_nome}${isMe?' <span class="badge" style="background:var(--roxo);font-size:9px">você</span>':''}</div>
-              <div class="user-card-email">${a.admin_email}</div>
-            </div>
-          </div>
-          <div class="text-muted" style="font-size:12px">@${a.admin_usuario}</div>
-          <div class="user-card-footer">
-            <div>
-              <span class="role-badge ${r.cls}">${r.label}</span>
-              <span style="font-size:12px;margin-left:6px">
-                <span class="status-dot ${a.admin_status}"></span>${a.admin_status==='active'?'Ativo':'Inativo'}
-              </span>
-            </div>
-            ${isSup?`<div class="d-flex gap-1">
-              <button class="btn-sm-roxo" onclick="editAdmin(${a._id})"><i class="bi bi-pencil-fill"></i></button>
-              <button class="btn-sm-danger" onclick="deleteAdmin(${a._id})" ${isMe?'disabled':''}><i class="bi bi-trash-fill"></i></button>
-            </div>`:''}
-          </div>
-        </div>
-      </div>`;
-    }).join('') : '<div class="col-12 text-muted">Nenhum administrador encontrado.</div>';
-  }
-
-  // Tabela
-  const tbody=document.getElementById('tb-admins');
-  if(tbody){
-    tbody.innerHTML=list.length ? list.map((a,i)=>{
-      const r=roleLabels[a.admin_perfil]||{label:a.admin_perfil,cls:'role-viewer'};
-      const isMe=currentUser&&a._id==currentUser._id;
-      return `<tr>
-        <td>${i+1}</td>
-        <td>${a.admin_nome}${isMe?' <span class="badge" style="background:var(--roxo);font-size:9px">você</span>':''}</td>
-        <td><code style="background:var(--roxo-pale);padding:2px 7px;border-radius:4px;font-size:12px;color:var(--roxo)">@${a.admin_usuario}</code></td>
-        <td>${a.admin_email}</td>
-        <td><span class="role-badge ${r.cls}">${r.label}</span></td>
-        <td><span class="status-dot ${a.admin_status}"></span>${a.admin_status==='active'?'Ativo':'Inativo'}</td>
-        <td style="font-size:12px;color:#999">${a._created||'—'}</td>
-        <td>${isSup?`<div class="d-flex gap-1">
-          <button class="btn-sm-roxo" onclick="editAdmin(${a._id})"><i class="bi bi-pencil-fill"></i> Editar</button>
-          <button class="btn-sm-danger" onclick="deleteAdmin(${a._id})" ${isMe?'disabled':''} ><i class="bi bi-trash-fill"></i></button>
-        </div>`:'<span class="text-muted">—</span>'}</td>
-      </tr>`;
-    }).join('') : '<tr><td colspan="8" class="text-center text-muted py-3">Nenhum registro</td></tr>';
-  }
-}
-
-function renderAdminStats(){
-  const a=DB['_admins']||[];
-  const c=document.getElementById('admin-stats');
-  if(!c)return;
-  const mk=(icon,label,val,color)=>`<div class="col-6 col-md-3">
-    <div class="stat-card">
-      <div class="stat-icon">${icon}</div>
-      <div class="stat-value" style="color:${color}">${val}</div>
-      <div class="stat-label">${label}</div>
-    </div>
-  </div>`;
-  c.innerHTML=
-    mk('<i class="bi bi-people-fill" style="color:var(--roxo)"></i>','Total',a.length,'var(--roxo)')+
-    mk('<i class="bi bi-check-circle-fill" style="color:#198754"></i>','Ativos',a.filter(x=>x.admin_status==='active').length,'#198754')+
-    mk('<i class="bi bi-shield-fill" style="color:var(--dourado)"></i>','Super Admins',a.filter(x=>x.admin_perfil==='super').length,'var(--dourado)')+
-    mk('<i class="bi bi-pencil-fill" style="color:#5a7fcc"></i>','Editores',a.filter(x=>x.admin_perfil==='editor').length,'#5a7fcc');
 }
 
 // ============================================================

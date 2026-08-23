@@ -11,11 +11,11 @@ function validateLogin(req, res, next) {
 
 // Valida o corpo da requisição de criação de usuário
 function validateNewUser(req, res, next) {
-    const { name, email, password, phone, role_id } = req.body;
+    const { name, email, login, password, phone, role_id } = req.body;
 
-    if (!name || !email || !password || !phone || !role_id) {
+    if (!name || !email || !login || !password || !phone || !role_id) {
         return res.status(400).json({
-            error: 'Campos obrigatórios: name, email, password, phone, role_id.'
+            error: 'Campos obrigatórios: name, email, login, password, phone, role_id.'
         });
     }
 

@@ -3,6 +3,7 @@ const {
     getAllUsers,
     getUserById,
     getUserByEmail,
+    getUserByLogin,
     createUser,
     updateUser,
     updateUserPassword,
@@ -42,15 +43,20 @@ async function showUser(req, res) {
 // POST /api/users → cria novo usuário (a senha é criptografada aqui, nunca antes)
 async function storeUser(req, res) {
     try {
-        const { name, email, password, phone, role_id } = req.body;
+        const { name, email, login, password, phone, role_id } = req.body;
 
-        const usuarioExistente = await getUserByEmail(email);
-        if (usuarioExistente) {
+        const emailExistente = await getUserByEmail(email);
+        if (emailExistente) {
             return res.status(409).json({ error: 'Já existe um usuário com esse email.' });
         }
 
+        const loginExistente = await getUserByLogin(login);
+        if (loginExistente) {
+            return res.status(409).json({ error: 'Esse nome de usuário (login) já está em uso.' });
+        }
+
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-        const newId = await createUser(name, email, hashedPassword, phone, role_id);
+        const newId = await createUser(name, email, login, hashedPassword, phone, role_id);
 
         res.status(201).json({ message: 'Usuário criado com sucesso', id_user: newId });
     } catch (error) {
@@ -63,9 +69,14 @@ async function storeUser(req, res) {
 async function editUser(req, res) {
     try {
         const { id } = req.params;
-        const { name, email, phone, role_id, status } = req.body;
+        const { name, email, login, phone, role_id, status } = req.body;
 
-        const affectedRows = await updateUser(id, name, email, phone, role_id, status);
+        const loginExistente = await getUserByLogin(login);
+        if (loginExistente && String(loginExistente.id_user) !== String(id)) {
+            return res.status(409).json({ error: 'Esse nome de usuário (login) já está em uso.' });
+        }
+
+        const affectedRows = await updateUser(id, name, email, login, phone, role_id, status);
 
         if (affectedRows === 0) {
             return res.status(404).json({ error: 'Usuário não encontrado' });
@@ -106,6 +117,11 @@ async function changePassword(req, res) {
 async function removeUser(req, res) {
     try {
         const { id } = req.params;
+
+        if (req.user && String(req.user.id_user) === String(id)) {
+            return res.status(400).json({ error: 'Não é possível excluir a própria conta.' });
+        }
+
         const affectedRows = await deleteUser(id);
 
         if (affectedRows === 0) {
