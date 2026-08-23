@@ -531,6 +531,16 @@ textarea.form-control { resize: vertical; min-height: 90px; }
   .menu > a { padding: 6px 8px; font-size: 12px; }
   .login-box { padding: 32px 20px; }
 }
+
+.invalid-feedback-custom {
+  display: none;
+  color: #dc3545;
+  font-size: 13px;
+  margin-top: 4px;
+}
+.is-invalid-custom {
+  border-color: #dc3545 !important;
+}
 </style>
 </head>
 <body>
@@ -1068,9 +1078,9 @@ textarea.form-control { resize: vertical; min-height: 90px; }
         </div>
         <ul class="nav nav-tabs">
           <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'contato','main'); carregarMainUnico(3,'contato-main')">Contato Main</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'contato','mensagem')">Mensagens</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'contato','localizacao')">Localização</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'contato','info')">Info Contato</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'contato','mensagem'); carregarMensagens()">Mensagens</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'contato','localizacao'); carregarLocalizacao()">Localização</a></li>
+          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'contato','info'); carregarContatoInfo()">Info Contato</a></li>
         </ul>
         <div class="tab-content">
 
@@ -1101,76 +1111,91 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 
           <div id="contato-tab-mensagem" class="tab-pane">
             <div class="admin-card">
-              <h2><i class="bi bi-chat-fill"></i> Mensagens <span class="badge-table ms-2">mensagem</span></h2>
-              <form onsubmit="handleSubmit(event,'mensagem')">
-                <input type="hidden" name="id" value="">
-                <div class="row g-3">
-                  <div class="col-md-6"><label class="form-label">mensagem_nome</label><input type="text" class="form-control" name="mensagem_nome" placeholder="Nome"></div>
-                  <div class="col-md-6"><label class="form-label">mensagem_email</label><input type="email" class="form-control" name="mensagem_email" placeholder="email@exemplo.com"></div>
-                  <div class="col-12"><label class="form-label">mensagem_texto</label><textarea class="form-control" name="mensagem_texto" placeholder="Mensagem..."></textarea></div>
-                </div>
-                <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('mensagem')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
-                </div>
-              </form>
-            </div>
-            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">mensagem</span></h2>
+              <h2><i class="bi bi-chat-fill"></i> Mensagens recebidas <span class="badge-table ms-2">contact_message</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Registros criados automaticamente pelo formulário de contato do site — não há inserção manual aqui, só visualização e exclusão.
+              </p>
               <div class="table-responsive"><table class="table table-bordered table-hover">
-                <thead><tr><th>#</th><th>Nome</th><th>Email</th><th>Texto</th><th>Ações</th></tr></thead>
-                <tbody id="tb-mensagem"><tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
+                <thead><tr><th>Recebido em</th><th>Nome</th><th>Email</th><th>Mensagem</th><th>Ações</th></tr></thead>
+                <tbody id="tb-mensagem"><tr><td colspan="5" class="text-center text-muted py-3">Nenhuma mensagem recebida ainda</td></tr></tbody>
               </table></div>
             </div>
           </div>
 
           <div id="contato-tab-localizacao" class="tab-pane">
             <div class="admin-card">
-              <h2><i class="bi bi-geo-alt-fill"></i> Localização <span class="badge-table ms-2">localizacao</span></h2>
-              <form onsubmit="handleSubmit(event,'localizacao')">
-                <input type="hidden" name="id" value="">
+              <h2><i class="bi bi-geo-alt-fill"></i> Localização <span class="badge-table ms-2">contact_location</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Mapa e endereço exibidos na página Contato — registro único, não uma lista.
+              </p>
+              <form onsubmit="salvarLocalizacao(event)" id="form-localizacao">
                 <div class="row g-3">
-                  <div class="col-12"><label class="form-label">localizacao_maps (URL embed)</label><input type="url" class="form-control" name="localizacao_maps" placeholder="https://maps.google.com/embed?..."></div>
-                  <div class="col-12"><label class="form-label">localizacao_endereco</label><input type="text" class="form-control" name="localizacao_endereco" placeholder="Rua Exemplo, 123 — Bairro, Cidade - UF"></div>
+                  <div class="col-12">
+                    <label class="form-label">Google Maps — cole o código de embed</label>
+                    <textarea class="form-control" id="localizacao-maps" rows="3"
+                      placeholder='Cole aqui o &lt;iframe src="https://www.google.com/maps/embed?..."&gt; que o Google Maps te dá em Compartilhar → Incorporar um mapa, ou só a URL diretamente.'></textarea>
+                    <div class="invalid-feedback-custom" id="localizacao-maps-erro"></div>
+                    <small class="text-muted">
+                      No Google Maps: clique em <strong>Compartilhar</strong> → aba <strong>Incorporar um mapa</strong> → <strong>Copiar HTML</strong>, e cole aqui. Extraio a URL automaticamente.
+                    </small>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Endereço — linha 1 (prédio / sala)</label>
+                    <input type="text" class="form-control" id="localizacao-linha1" placeholder="Ed. Jurerê internacional, 4º andar, sala 406" required>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Endereço — linha 2 (rua / número)</label>
+                    <input type="text" class="form-control" id="localizacao-linha2" placeholder="Rua Álvares Machado, 281" required>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Endereço — linha 3 (bairro, cidade - UF, CEP)</label>
+                    <input type="text" class="form-control" id="localizacao-linha3" placeholder="Vila Bocaina, Mauá - SP, 09310-020" required>
+                  </div>
                 </div>
                 <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('localizacao')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Salvar</button>
+                  <button type="button" class="btn btn-dourado" onclick="carregarLocalizacao()"><i class="bi bi-arrow-counterclockwise me-1"></i>Desfazer alterações</button>
                 </div>
               </form>
             </div>
-            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">localizacao</span></h2>
-              <div class="table-responsive"><table class="table table-bordered table-hover">
-                <thead><tr><th>#</th><th>Maps URL</th><th>Endereço</th><th>Ações</th></tr></thead>
-                <tbody id="tb-localizacao"><tr><td colspan="4" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
-              </table></div>
+            <div class="admin-card">
+              <h2><i class="bi bi-eye-fill"></i> Pré-visualização do mapa</h2>
+              <div id="localizacao-preview" class="text-muted" style="font-size:14px">Nenhum mapa configurado ainda.</div>
             </div>
           </div>
 
           <div id="contato-tab-info" class="tab-pane">
             <div class="admin-card">
-              <h2><i class="bi bi-telephone-fill"></i> Contato Info <span class="badge-table ms-2">contato_info</span></h2>
-              <form onsubmit="handleSubmit(event,'contato_info')">
-                <input type="hidden" name="id" value="">
+              <h2><i class="bi bi-telephone-fill"></i> Info Contato <span class="badge-table ms-2">contact_info</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Telefone, WhatsApp e horário de atendimento exibidos na página Contato — registro único, não uma lista.
+              </p>
+              <form onsubmit="salvarContatoInfo(event)" id="form-contato-info">
                 <div class="row g-3">
-                  <div class="col-12"><label class="form-label">localizacao_maps (URL embed)</label><input type="url" class="form-control" name="localizacao_maps" placeholder="https://maps.google.com/embed?..."></div>
-                  <div class="col-md-6"><label class="form-label">contato_info_telefone</label><input type="tel" class="form-control" name="contato_info_telefone" placeholder="(11) 4515-0556"></div>
-                  <div class="col-md-6"><label class="form-label">contato_info_whatsapp</label><input type="tel" class="form-control" name="contato_info_whatsapp" placeholder="(11) 97199-3704"></div>
-                  <div class="col-12"><label class="form-label">contato_info_texto_atendimento</label><textarea class="form-control" name="contato_info_texto_atendimento" placeholder="Ex: Seg a Sex das 9h às 18h"></textarea></div>
+                  <div class="col-md-6">
+                    <label class="form-label">Telefone</label>
+                    <input type="tel" class="form-control" id="contato-info-telefone"
+                      placeholder="(11) 4515-0556" maxlength="15"
+                      oninput="mascararTelefone(this)">
+                    <div class="invalid-feedback-custom" id="contato-info-telefone-erro"></div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">WhatsApp</label>
+                    <input type="tel" class="form-control" id="contato-info-whatsapp"
+                      placeholder="(11) 97199-3704" maxlength="15" required
+                      oninput="mascararTelefone(this)">
+                    <div class="invalid-feedback-custom" id="contato-info-whatsapp-erro"></div>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Horário de atendimento</label>
+                    <textarea class="form-control" id="contato-info-atendimento" placeholder="Ex: Seg a Sex das 9h às 18h" required></textarea>
+                  </div>
                 </div>
                 <div class="btn-row">
-                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Inserir / Atualizar</button>
-                  <button type="button" class="btn btn-danger" onclick="confirmDelete('contato_info')"><i class="bi bi-trash me-1"></i>Deletar</button>
-                  <button type="reset" class="btn btn-dourado"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Salvar</button>
+                  <button type="button" class="btn btn-dourado" onclick="carregarContatoInfo()"><i class="bi bi-arrow-counterclockwise me-1"></i>Desfazer alterações</button>
                 </div>
               </form>
-            </div>
-            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">contato_info</span></h2>
-              <div class="table-responsive"><table class="table table-bordered table-hover">
-                <thead><tr><th>#</th><th>Telefone</th><th>WhatsApp</th><th>Atendimento</th><th>Ações</th></tr></thead>
-                <tbody id="tb-contato_info"><tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
-              </table></div>
             </div>
           </div>
 

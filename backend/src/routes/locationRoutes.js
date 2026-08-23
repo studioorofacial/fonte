@@ -7,11 +7,12 @@ const {
     editLocation,
     removeLocation
 } = require('../controllers/locationControllers');
+const { authenticate } = require('../middlewares/authLoginMiddleware');
 
 router.get('/location', listLocation);
 router.get('/location/:id', showLocation);
-router.post('/location', storeLocation);
-router.put('/location/:id', editLocation);
-router.delete('/location/:id', removeLocation);
+router.post('/location', authenticate, storeLocation);
+router.put('/location/:id', authenticate, editLocation);
+router.delete('/location/:id', authenticate, removeLocation);
 
 module.exports = router;

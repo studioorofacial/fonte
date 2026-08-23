@@ -1,8 +1,8 @@
 const pool = require('../database/connection');
 
-// Busca todos os registros da tabela contact_message
+// Busca todos os registros da tabela contact_message, mais recentes primeiro
 async function getAllMessage() {
-    const [rows] = await pool.query('SELECT * FROM contact_message');
+    const [rows] = await pool.query('SELECT * FROM contact_message ORDER BY created_at DESC');
     return rows;
 }
 

@@ -56,6 +56,15 @@ async function deleteUser(id) {
     return result.affectedRows;
 }
 
+// Busca só os e-mails dos usuários ativos (status=1) — usado pra
+// notificar todos os admins quando chega uma mensagem de contato
+async function getActiveUsersEmails() {
+    const [rows] = await pool.query(
+        'SELECT email FROM users WHERE status = 1'
+    );
+    return rows.map(r => r.email);
+}
+
 module.exports = {
     getAllUsers,
     getUserById,
@@ -63,5 +72,6 @@ module.exports = {
     createUser,
     updateUser,
     updateUserPassword,
-    deleteUser
+    deleteUser,
+    getActiveUsersEmails
 };

@@ -1025,3 +1025,326 @@ async function deletarDiferencialAtual() {
         showToast('Erro ao excluir registro.', 'danger');
     }
 }
+
+// ============================================================
+// MENSAGENS DE CONTATO (só leitura + exclusão, sem formulário —
+// os registros vêm do formulário público de contato)
+// ============================================================
+async function carregarMensagens() {
+    try {
+        const response = await authFetch(`${API_URL}/message`);
+        if (!response.ok) throw new Error('Falha ao carregar mensagens');
+        const itens = await response.json();
+        renderizarTabelaMensagens(itens);
+    } catch (erro) {
+        console.error('Erro ao carregar mensagens:', erro);
+    }
+}
+
+function renderizarTabelaMensagens(itens) {
+    const tbody = document.getElementById('tb-mensagem');
+
+    if (itens.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Nenhuma mensagem recebida ainda</td></tr>`;
+        return;
+    }
+
+    // Já vem ordenado do backend (mais recente primeiro)
+    tbody.innerHTML = itens.map(item => `
+        <tr>
+            <td>${new Date(item.created_at).toLocaleString('pt-BR')}</td>
+            <td>${item.name}</td>
+            <td>${item.email}</td>
+            <td>${trunc(item.message, 100)}</td>
+            <td>
+                <button class="btn-sm-danger" onclick="deletarMensagemPorId(${item.id_message})">
+                    <i class="bi bi-trash-fill"></i> Excluir
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function deletarMensagemPorId(id) {
+    if (!confirm('Tem certeza que deseja excluir esta mensagem?')) return;
+
+    try {
+        const response = await authFetch(`${API_URL}/message/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Falha ao excluir');
+        showToast('Mensagem excluída!', 'danger');
+        carregarMensagens();
+    } catch (erro) {
+        console.error('Erro ao excluir mensagem:', erro);
+        showToast('Erro ao excluir mensagem.', 'danger');
+    }
+}
+
+// ============================================================
+// VALIDAÇÃO E MÁSCARA DE TELEFONE (usado no Info Contato)
+// ============================================================
+
+// Formata o valor enquanto o usuário digita: (11) 4515-0556 ou (11) 97199-3704
+function mascararTelefone(input) {
+    let digitos = input.value.replace(/\D/g, '').slice(0, 11);
+
+    if (digitos.length > 10) {
+        // Celular/WhatsApp: (11) 97199-3704
+        input.value = digitos.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, '($1) $2-$3');
+    } else if (digitos.length > 6) {
+        // Fixo: (11) 4515-0556
+        input.value = digitos.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, '($1) $2-$3');
+    } else if (digitos.length > 2) {
+        input.value = digitos.replace(/^(\d{2})(\d{0,5}).*/, '($1) $2');
+    } else if (digitos.length > 0) {
+        input.value = `(${digitos}`;
+    } else {
+        input.value = '';
+    }
+}
+
+// Aceita telefone fixo (11) 4515-0556 ou celular (11) 97199-3704.
+// DDD entre 11 e 99, número com 8 ou 9 dígitos.
+const REGEX_TELEFONE = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
+
+function validarTelefone(valor) {
+    return REGEX_TELEFONE.test(valor.trim());
+}
+
+// Mostra/some a mensagem de erro embaixo do campo e marca a borda vermelha.
+// Retorna true se o campo é válido.
+function validarCampoTelefone(inputId, erroId, obrigatorio) {
+    const input = document.getElementById(inputId);
+    const erroEl = document.getElementById(erroId);
+    const valor = input.value.trim();
+
+    if (!valor && !obrigatorio) {
+        input.classList.remove('is-invalid-custom');
+        erroEl.style.display = 'none';
+        return true;
+    }
+
+    if (!valor && obrigatorio) {
+        input.classList.add('is-invalid-custom');
+        erroEl.textContent = 'Esse campo é obrigatório.';
+        erroEl.style.display = 'block';
+        return false;
+    }
+
+    if (!validarTelefone(valor)) {
+        input.classList.add('is-invalid-custom');
+        erroEl.textContent = 'Formato inválido. Use (11) 4515-0556 ou (11) 97199-3704.';
+        erroEl.style.display = 'block';
+        return false;
+    }
+
+    input.classList.remove('is-invalid-custom');
+    erroEl.style.display = 'none';
+    return true;
+}
+
+// ============================================================
+// CONTATO INFO — registro único (telefone, whatsapp, atendimento)
+// ============================================================
+// Não fixamos o id_info: o AUTO_INCREMENT do MySQL não reaproveita
+// ids de registros excluídos, então o id real pode não ser 1. Por
+// isso buscamos a lista e usamos o primeiro (e único) registro que
+// existir, guardando o id de verdade pra usar no PUT.
+let contatoInfoId = null;
+
+async function carregarContatoInfo() {
+    try {
+        const response = await fetch(`${API_URL}/info`);
+        const lista = await response.json();
+
+        if (lista.length === 0) {
+            contatoInfoId = null;
+            document.getElementById('contato-info-telefone').value = '';
+            document.getElementById('contato-info-whatsapp').value = '';
+            document.getElementById('contato-info-atendimento').value = '';
+            return;
+        }
+
+        const data = lista[0];
+        contatoInfoId = data.id_info;
+        document.getElementById('contato-info-telefone').value = data.phone || '';
+        document.getElementById('contato-info-whatsapp').value = data.whatsapp || '';
+        document.getElementById('contato-info-atendimento').value = data.service_text || '';
+    } catch (erro) {
+        console.error('Erro ao carregar info de contato:', erro);
+        showToast('Erro ao carregar dados.', 'danger');
+    }
+}
+
+async function salvarContatoInfo(event) {
+    event.preventDefault();
+
+    // Telefone é opcional (mas se preenchido, precisa ter formato válido);
+    // WhatsApp é obrigatório
+    const telefoneOk = validarCampoTelefone('contato-info-telefone', 'contato-info-telefone-erro', false);
+    const whatsappOk = validarCampoTelefone('contato-info-whatsapp', 'contato-info-whatsapp-erro', true);
+
+    if (!telefoneOk || !whatsappOk) {
+        showToast('Corrija os campos destacados antes de salvar.', 'danger');
+        return;
+    }
+
+    const dados = {
+        phone: document.getElementById('contato-info-telefone').value,
+        whatsapp: document.getElementById('contato-info-whatsapp').value,
+        service_text: document.getElementById('contato-info-atendimento').value
+    };
+
+    try {
+        let response;
+
+        if (contatoInfoId) {
+            response = await authFetch(`${API_URL}/info/${contatoInfoId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+        } else {
+            dados.id_user = currentUser?.id_user;
+            response = await authFetch(`${API_URL}/info`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+        }
+
+        if (!response.ok) throw new Error('Falha ao salvar');
+        showToast('Salvo com sucesso!', 'success');
+        await carregarContatoInfo(); // garante que capturamos o id real após criar
+    } catch (erro) {
+        console.error('Erro ao salvar info de contato:', erro);
+        showToast('Erro ao salvar.', 'danger');
+    }
+}
+
+// ============================================================
+// LOCALIZAÇÃO — registro único (mapa embed + endereço em 3 linhas)
+// ============================================================
+// Igual ao Info Contato: não fixamos o id, buscamos o primeiro
+// registro que existir e guardamos o id real pra usar no PUT.
+let localizacaoId = null;
+
+// Aceita tanto o <iframe ...src="URL"...> inteiro (o que o Google Maps
+// dá em "Copiar HTML") quanto só a URL direta, e sempre devolve só a URL.
+function extrairSrcDoIframe(valor) {
+    const texto = String(valor || '').trim();
+
+    if (!texto) return '';
+
+    const match = texto.match(/src=["']([^"']+)["']/i);
+    if (match) return match[1];
+
+    return texto; // já era só a URL
+}
+
+function validarUrlMaps(url) {
+    if (!url) return true; // mapa é opcional
+    return /^https:\/\/www\.google\.com\/maps\/embed/.test(url);
+}
+
+async function carregarLocalizacao() {
+    try {
+        const response = await fetch(`${API_URL}/location`);
+        const lista = await response.json();
+
+        const preview = document.getElementById('localizacao-preview');
+
+        if (lista.length === 0) {
+            localizacaoId = null;
+            document.getElementById('localizacao-maps').value = '';
+            document.getElementById('localizacao-linha1').value = '';
+            document.getElementById('localizacao-linha2').value = '';
+            document.getElementById('localizacao-linha3').value = '';
+            preview.innerHTML = 'Nenhum mapa configurado ainda.';
+            return;
+        }
+
+        const data = lista[0];
+        localizacaoId = data.id_location;
+
+        document.getElementById('localizacao-maps').value = data.maps_url || '';
+
+        const linhas = String(data.address || '').split('\n');
+        document.getElementById('localizacao-linha1').value = linhas[0] || '';
+        document.getElementById('localizacao-linha2').value = linhas[1] || '';
+        document.getElementById('localizacao-linha3').value = linhas[2] || '';
+
+        atualizarPreviewMapa(data.maps_url);
+    } catch (erro) {
+        console.error('Erro ao carregar localização:', erro);
+        showToast('Erro ao carregar dados.', 'danger');
+    }
+}
+
+function atualizarPreviewMapa(url) {
+    const preview = document.getElementById('localizacao-preview');
+
+    if (!url) {
+        preview.innerHTML = 'Nenhum mapa configurado ainda.';
+        return;
+    }
+
+    preview.innerHTML = `<iframe src="${url}" width="100%" height="300" style="border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+}
+
+async function salvarLocalizacao(event) {
+    event.preventDefault();
+
+    const mapsInput = document.getElementById('localizacao-maps');
+    const mapsErro = document.getElementById('localizacao-maps-erro');
+    const urlExtraida = extrairSrcDoIframe(mapsInput.value);
+
+    if (!validarUrlMaps(urlExtraida)) {
+        mapsInput.classList.add('is-invalid-custom');
+        mapsErro.textContent = 'Isso não parece uma URL de embed válida do Google Maps. Use "Compartilhar → Incorporar um mapa → Copiar HTML" e cole o código aqui.';
+        mapsErro.style.display = 'block';
+        return;
+    }
+    mapsInput.classList.remove('is-invalid-custom');
+    mapsErro.style.display = 'none';
+
+    // Deixa o campo já mostrando só a URL limpa, mesmo que o usuário
+    // tenha colado o <iframe> inteiro
+    mapsInput.value = urlExtraida;
+
+    const linha1 = document.getElementById('localizacao-linha1').value.trim();
+    const linha2 = document.getElementById('localizacao-linha2').value.trim();
+    const linha3 = document.getElementById('localizacao-linha3').value.trim();
+    const enderecoCompleto = [linha1, linha2, linha3].filter(Boolean).join('\n');
+
+    const dados = {
+        maps_url: urlExtraida,
+        address: enderecoCompleto
+    };
+
+    try {
+        let response;
+
+        if (localizacaoId) {
+            response = await authFetch(`${API_URL}/location/${localizacaoId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+        } else {
+            dados.id_user = currentUser?.id_user;
+            response = await authFetch(`${API_URL}/location`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+        }
+
+        if (!response.ok) throw new Error('Falha ao salvar');
+        showToast('Salvo com sucesso!', 'success');
+        atualizarPreviewMapa(urlExtraida);
+        await carregarLocalizacao();
+    } catch (erro) {
+        console.error('Erro ao salvar localização:', erro);
+        showToast('Erro ao salvar.', 'danger');
+    }
+}

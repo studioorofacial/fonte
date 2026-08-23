@@ -5,6 +5,7 @@ const {
     updateMessage,
     deleteMessage
 } = require('../models/messageModel');
+const { enviarNotificacaoContato } = require('../utils/mailer');
 
 // GET /api/message → lista todos
 async function listMessage(req, res) {
@@ -34,7 +35,7 @@ async function showMessage(req, res) {
     }
 }
 
-// POST /api/message → cria novo registro
+// POST /api/message → cria novo registro e dispara os e-mails de notificação
 async function storeMessage(req, res) {
     try {
         const { message, email, name, id_user } = req.body;
@@ -44,6 +45,13 @@ async function storeMessage(req, res) {
         }
 
         const newId = await createMessage(message, email, name, id_user || null);
+
+        // Envia os e-mails em segundo plano — se o envio falhar, a mensagem
+        // já foi salva no banco de qualquer forma, então só logamos o erro
+        enviarNotificacaoContato({ name, email, message }).catch(erro => {
+            console.error('Erro ao enviar e-mails de notificação de contato:', erro.message);
+        });
+
         res.status(201).json({ message: 'Criado com sucesso', id_message: newId });
     } catch (error) {
         console.error('Erro ao criar message:', error.message);
