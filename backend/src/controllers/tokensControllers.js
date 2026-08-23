@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { getUserByEmail, getUserById } = require('../models/usersModel');
+const { getUserByEmailOrLogin, getUserById } = require('../models/usersModel');
 const { createToken, getByTokenValue, deleteToken } = require('../models/tokensModel');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateTokens');
 
@@ -10,9 +10,11 @@ const REFRESH_COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 dias em ms
 // POST /api/auth/login
 async function login(req, res) {
     try {
-        const { email, password } = req.body;
+        // O front manda esse campo como "email", mas aceita tanto o
+        // e-mail quanto o login (usuário) digitado na tela
+        const { email: identificador, password } = req.body;
 
-        const user = await getUserByEmail(email);
+        const user = await getUserByEmailOrLogin(identificador);
 
         // Mensagem genérica: não revela se o problema foi o email ou a senha
         if (!user || user.status !== 1) {

@@ -7,15 +7,15 @@ const {
     editMain,
     removeMain
 } = require('../controllers/mainControllers');
-const { authenticate } = require('../middlewares/authLoginMiddleware');
+const { authenticate, authorize } = require('../middlewares/authLoginMiddleware');
 
 // Leitura é pública (o site usa isso pra mostrar os banners de cada página)
 router.get('/main', listMain);
 router.get('/main/:id', showMain);
 
 // Escrita exige estar logado no painel admin
-router.post('/main', authenticate, storeMain);
-router.put('/main/:id', authenticate, editMain);
-router.delete('/main/:id', authenticate, removeMain);
+router.post('/main', authenticate, authorize(1, 2), storeMain);
+router.put('/main/:id', authenticate, authorize(1, 2), editMain);
+router.delete('/main/:id', authenticate, authorize(1, 2), removeMain);
 
 module.exports = router;

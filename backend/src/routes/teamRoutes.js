@@ -7,12 +7,12 @@ const {
     editTeam,
     removeTeam
 } = require('../controllers/teamControllers');
-const { authenticate } = require('../middlewares/authLoginMiddleware');
+const { authenticate, authorize } = require('../middlewares/authLoginMiddleware');
 
 router.get('/team', listTeam);
 router.get('/team/:id', showTeam);
-router.post('/team', authenticate, storeTeam);
-router.put('/team/:id', authenticate, editTeam);
-router.delete('/team/:id', authenticate, removeTeam);
+router.post('/team', authenticate, authorize(1, 2), storeTeam);
+router.put('/team/:id', authenticate, authorize(1, 2), editTeam);
+router.delete('/team/:id', authenticate, authorize(1, 2), removeTeam);
 
 module.exports = router;

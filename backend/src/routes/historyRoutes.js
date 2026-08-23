@@ -7,12 +7,12 @@ const {
     editHistory,
     removeHistory
 } = require('../controllers/historyControllers');
-const { authenticate } = require('../middlewares/authLoginMiddleware');
+const { authenticate, authorize } = require('../middlewares/authLoginMiddleware');
 
 router.get('/history', listHistory);
 router.get('/history/:id', showHistory);
-router.post('/history', authenticate, storeHistory);
-router.put('/history/:id', authenticate, editHistory);
-router.delete('/history/:id', authenticate, removeHistory);
+router.post('/history', authenticate, authorize(1, 2), storeHistory);
+router.put('/history/:id', authenticate, authorize(1, 2), editHistory);
+router.delete('/history/:id', authenticate, authorize(1, 2), removeHistory);
 
 module.exports = router;

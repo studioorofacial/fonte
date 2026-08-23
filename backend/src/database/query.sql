@@ -51,6 +51,47 @@ VALUES (
         3
     );
 
+INSERT INTO
+    users (
+        name,
+        email,
+        login,
+        password,
+        phone,
+        status,
+        role_id
+    )
+VALUES (
+        "Super Admin",
+        "superadmin@email.com",
+        "superadmin",
+        "123456",
+        "(11) 25143-6521",
+        1,
+        1
+    );
+
+INSERT INTO
+    users (
+        name,
+        email,
+        login,
+        password,
+        phone,
+        status,
+        role_id
+    )
+VALUES 
+    (
+        "Carlos Pereira",
+        "carlos_pereira@email.com",
+        "carlos.pereira",
+        "123456",
+        "(11) 25143-6521",
+        1,
+        3
+    );
+
 # -------------------------------------------- Catalogo --------------------------------------------
 use db_studioorofacial;
 INSERT INTO

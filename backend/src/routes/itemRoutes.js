@@ -7,15 +7,15 @@ const {
     editItem,
     removeItem
 } = require('../controllers/itemControllers');
-const { authenticate } = require('../middlewares/authLoginMiddleware');
+const { authenticate, authorize } = require('../middlewares/authLoginMiddleware');
 
 // Leitura é pública (o site público usa isso pra mostrar o catálogo)
 router.get('/item', listItem);
 router.get('/item/:id', showItem);
 
 // Escrita exige estar logado no painel admin
-router.post('/item', authenticate, storeItem);
-router.put('/item/:id', authenticate, editItem);
-router.delete('/item/:id', authenticate, removeItem);
+router.post('/item', authenticate, authorize(1, 2), storeItem);
+router.put('/item/:id', authenticate, authorize(1, 2), editItem);
+router.delete('/item/:id', authenticate, authorize(1, 2), removeItem);
 
 module.exports = router;

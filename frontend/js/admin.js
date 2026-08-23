@@ -1377,47 +1377,11 @@ function renderAdmins() {
     if (perfil) lista = lista.filter(a => String(a.role_id) === perfil);
     if (status) lista = lista.filter(a => String(a.status) === status);
 
-    const grid = document.getElementById('admin-grid');
     const tbody = document.getElementById('tb-admins');
 
     if (lista.length === 0) {
-        if (grid) grid.innerHTML = '<div class="col-12 text-muted">Nenhum administrador encontrado.</div>';
         if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Nenhum registro</td></tr>';
         return;
-    }
-
-    if (grid) {
-        grid.innerHTML = lista.map(a => {
-            const r = roleLabels[a.role_id] || { label: 'Desconhecido', cls: 'role-viewer' };
-            const initials = (a.name || '').split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
-            const isMe = currentUser && a.id_user === currentUser.id_user;
-            const ativo = Number(a.status) === 1;
-
-            return `<div class="col-md-4 col-sm-6">
-                <div class="user-card">
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <div class="avatar">${initials}</div>
-                        <div class="overflow-hidden">
-                            <div class="user-card-name">${a.name}${isMe ? ' <span class="badge" style="background:var(--roxo);font-size:9px">você</span>' : ''}</div>
-                            <div class="user-card-email">${a.email}</div>
-                        </div>
-                    </div>
-                    <div class="text-muted" style="font-size:12px">@${a.login}</div>
-                    <div class="user-card-footer">
-                        <div>
-                            <span class="role-badge ${r.cls}">${r.label}</span>
-                            <span style="font-size:12px;margin-left:6px">
-                                <span class="status-dot ${ativo ? 'active' : 'inactive'}"></span>${ativo ? 'Ativo' : 'Inativo'}
-                            </span>
-                        </div>
-                        <div class="d-flex gap-1">
-                            <button class="btn-sm-roxo" onclick="editarAdmin(${a.id_user})"><i class="bi bi-pencil-fill"></i></button>
-                            <button class="btn-sm-danger" onclick="deletarAdmin(${a.id_user})" ${isMe ? 'disabled' : ''}><i class="bi bi-trash-fill"></i></button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
     }
 
     if (tbody) {
@@ -1478,6 +1442,12 @@ function editarAdmin(id) {
     document.getElementById('af-senha').value = '';
     document.getElementById('af-senha2').value = '';
 
+    // E-mail e login são fixos após a criação — só dá pra ver, não editar
+    document.getElementById('af-email').readOnly = true;
+    document.getElementById('af-usuario').readOnly = true;
+    document.getElementById('af-email-hint').style.display = 'block';
+    document.getElementById('af-usuario-hint').style.display = 'block';
+
     document.getElementById('admin-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Salvar Alterações';
     document.getElementById('pw-hint').textContent = 'Deixe em branco para manter a senha atual.';
     document.querySelector('#page-admins .admin-card').scrollIntoView({ behavior: 'smooth' });
@@ -1490,6 +1460,13 @@ function resetAdminForm() {
     });
     document.getElementById('af-perfil').value = '2';
     document.getElementById('af-status').value = '1';
+
+    // Volta a liberar e-mail/login pra edição (só ficam travados no modo "editar")
+    document.getElementById('af-email').readOnly = false;
+    document.getElementById('af-usuario').readOnly = false;
+    document.getElementById('af-email-hint').style.display = 'none';
+    document.getElementById('af-usuario-hint').style.display = 'none';
+
     document.getElementById('admin-form-btn').innerHTML = '<i class="bi bi-person-plus-fill me-1"></i>Cadastrar Administrador';
     document.getElementById('pw-bar').className = 'pw-bar';
     document.getElementById('pw-hint').textContent = '';
@@ -1534,8 +1511,9 @@ async function handleAdminSubmit(event) {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    name: nome, email, login, phone: telefone,
+                    name: nome, phone: telefone,
                     role_id: Number(perfil), status: Number(status)
+                    // email e login não são enviados: são fixos após a criação
                 })
             });
 

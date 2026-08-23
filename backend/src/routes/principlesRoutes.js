@@ -7,12 +7,12 @@ const {
     editPrinciple,
     removePrinciple
 } = require('../controllers/principlesControllers');
-const { authenticate } = require('../middlewares/authLoginMiddleware');
+const { authenticate, authorize } = require('../middlewares/authLoginMiddleware');
 
 router.get('/principles', listPrinciples);
 router.get('/principles/:id', showPrinciple);
-router.post('/principles', authenticate, storePrinciple);
-router.put('/principles/:id', authenticate, editPrinciple);
-router.delete('/principles/:id', authenticate, removePrinciple);
+router.post('/principles', authenticate, authorize(1, 2), storePrinciple);
+router.put('/principles/:id', authenticate, authorize(1, 2), editPrinciple);
+router.delete('/principles/:id', authenticate, authorize(1, 2), removePrinciple);
 
 module.exports = router;

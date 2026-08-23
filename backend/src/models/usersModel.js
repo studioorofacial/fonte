@@ -23,6 +23,16 @@ async function getUserByEmail(email) {
     return rows[0];
 }
 
+// Busca um usuário pelo email OU pelo login (usado no login — o campo
+// "Usuário ou e-mail" da tela aceita os dois)
+async function getUserByEmailOrLogin(identificador) {
+    const [rows] = await pool.query(
+        'SELECT * FROM users WHERE email = ? OR login = ?',
+        [identificador, identificador]
+    );
+    return rows[0];
+}
+
 // Busca um usuário pelo login (usado pra checar duplicidade)
 async function getUserByLogin(login) {
     const [rows] = await pool.query('SELECT * FROM users WHERE login = ?', [login]);
@@ -38,11 +48,13 @@ async function createUser(name, email, login, hashedPassword, phone, role_id) {
     return result.insertId;
 }
 
-// Atualiza dados cadastrais do usuário (não mexe na senha)
-async function updateUser(id, name, email, login, phone, role_id, status) {
+// Atualiza dados cadastrais do usuário. email e login NÃO entram aqui de
+// propósito: são fixos após a criação, só alteráveis direto no banco se
+// um dia for realmente necessário.
+async function updateUser(id, name, phone, role_id, status) {
     const [result] = await pool.query(
-        'UPDATE users SET name = ?, email = ?, login = ?, phone = ?, role_id = ?, status = ? WHERE id_user = ?',
-        [name, email, login, phone, role_id, status, id]
+        'UPDATE users SET name = ?, phone = ?, role_id = ?, status = ? WHERE id_user = ?',
+        [name, phone, role_id, status, id]
     );
     return result.affectedRows;
 }
@@ -71,14 +83,27 @@ async function getActiveUsersEmails() {
     return rows.map(r => r.email);
 }
 
+// O "master" do sistema é o primeiro registro da tabela users — o
+// superadmin original. Ele nunca pode ser excluído, por ninguém,
+// nem por ele mesmo (diferente dos demais usuários Root, que podem
+// excluir uns aos outros normalmente).
+async function getMasterUserId() {
+    const [rows] = await pool.query(
+        'SELECT id_user FROM users ORDER BY id_user ASC LIMIT 1'
+    );
+    return rows[0]?.id_user;
+}
+
 module.exports = {
     getAllUsers,
     getUserById,
     getUserByEmail,
+    getUserByEmailOrLogin,
     getUserByLogin,
     createUser,
     updateUser,
     updateUserPassword,
     deleteUser,
-    getActiveUsersEmails
+    getActiveUsersEmails,
+    getMasterUserId
 };
