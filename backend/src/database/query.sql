@@ -92,6 +92,20 @@ VALUES
         3
     );
 
+use db_studioorofacial;
+
+ALTER TABLE users
+ADD COLUMN login VARCHAR(100) NOT NULL DEFAULT '' AFTER name;
+
+UPDATE users SET login = 'superadmin'      WHERE email = 'superadmin@email.com';
+
+UPDATE users SET login = 'maria.silva'     WHERE email = 'maria_silva@email.com';
+
+UPDATE users SET login = 'carlos.pereira'  WHERE email = 'carlos_pereira@email.com';
+
+ALTER TABLE users
+ADD UNIQUE KEY uq_users_login (login);
+
 # -------------------------------------------- Catalogo --------------------------------------------
 use db_studioorofacial;
 INSERT INTO
