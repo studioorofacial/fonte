@@ -751,10 +751,37 @@ body.somente-leitura .admin-card form select {
                     <label class="form-label">Título do slide</label>
                     <input type="text" class="form-control" id="carousel-titulo" placeholder="Título do slide" required>
                   </div>
+
                   <div class="col-md-6">
-                    <label class="form-label">Imagem de fundo (caminho/URL)</label>
-                    <input type="text" class="form-control" id="carousel-background" placeholder="img/1.jpg" required>
+                    <label class="form-label">Imagem de fundo</label>
+
+                    <input
+                        type="file"
+                        class="form-control"
+                        id="carousel-file"
+                        accept="image/*">
+
+                    <input
+                        type="text"
+                        class="form-control mt-2"
+                        id="carousel-background"
+                        placeholder="img/1.jpg"
+                        readonly
+                        required>
+
+                    <img
+                        id="carousel-preview"
+                        src=""
+                        style="
+                            display:none;
+                            max-width:100%;
+                            max-height:200px;
+                            margin-top:10px;
+                            border-radius:8px;
+                            border:1px solid #ddd;
+                        ">
                   </div>
+
                   <div class="col-12">
                     <label class="form-label">Descrição</label>
                     <textarea class="form-control" id="carousel-descricao" placeholder="Descrição do slide..."></textarea>

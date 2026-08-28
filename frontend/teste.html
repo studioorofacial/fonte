@@ -1,0 +1,357 @@
+const API_URL = 'http://localhost:3001/api';
+
+// O backend exige id_user nos POSTs de conteúdo enquanto o login ainda não está conectado.
+// Troque este valor pelo ID do usuário autenticado quando a rota de login for criada.
+const CMS_USER_ID = 1;
+
+const RESOURCES = {
+  main: {
+    label: 'Home Main', endpoint: '/main', idField: 'id_main', requiresUserOnCreate: true,
+    fields: [
+      { name: 'title', label: 'Título', type: 'text', required: true, placeholder: 'Título principal' },
+      { name: 'subtitle', label: 'Subtítulo', type: 'text', placeholder: 'Subtítulo da home' }
+    ],
+    columns: [{ field: 'title', label: 'Título' }, { field: 'subtitle', label: 'Subtítulo' }]
+  },
+  carousel: {
+    label: 'Home Carousel', endpoint: '/carousel', idField: 'id_carousel', requiresUserOnCreate: true,
+    fields: [
+      { name: 'title', label: 'Título', type: 'text', required: true, placeholder: 'Título do slide' },
+      { name: 'description', label: 'Descrição', type: 'textarea', required: true, placeholder: 'Descrição do slide' },
+      { name: 'background_image', label: 'Imagem de fundo (URL)', type: 'url', placeholder: 'https://...' }
+    ],
+    columns: [{ field: 'title', label: 'Título' }, { field: 'description', label: 'Descrição' }, { field: 'background_image', label: 'Imagem' }]
+  },
+  history: {
+    label: 'História', endpoint: '/history', idField: 'id_history', requiresUserOnCreate: true,
+    fields: [
+      { name: 'title', label: 'Título', type: 'text', required: true, placeholder: 'Título da história' },
+      { name: 'text', label: 'Texto', type: 'textarea', required: true, placeholder: 'Texto da história' },
+      { name: 'image', label: 'Imagem (URL)', type: 'url', placeholder: 'https://...' }
+    ],
+    columns: [{ field: 'title', label: 'Título' }, { field: 'text', label: 'Texto' }, { field: 'image', label: 'Imagem' }]
+  },
+  principles: {
+    label: 'Princípios', endpoint: '/principles', idField: 'id_principle', requiresUserOnCreate: true,
+    fields: [
+      { name: 'title', label: 'Título', type: 'text', required: true, placeholder: 'Ex.: Missão' },
+      { name: 'text', label: 'Texto', type: 'textarea', required: true, placeholder: 'Descrição do princípio' },
+      { name: 'icon', label: 'Ícone', type: 'text', placeholder: '⭐ ou URL' }
+    ],
+    columns: [{ field: 'title', label: 'Título' }, { field: 'text', label: 'Texto' }, { field: 'icon', label: 'Ícone' }]
+  },
+  team: {
+    label: 'Equipe', endpoint: '/team', idField: 'id_team', requiresUserOnCreate: true,
+    fields: [
+      { name: 'specialist', label: 'Especialista', type: 'text', required: true, placeholder: 'Nome' },
+      { name: 'university', label: 'Universidade', type: 'text', placeholder: 'Universidade' },
+      { name: 'education', label: 'Formação', type: 'text', placeholder: 'Odontologia' },
+      { name: 'image', label: 'Imagem (URL)', type: 'url', placeholder: 'https://...' }
+    ],
+    columns: [{ field: 'specialist', label: 'Especialista' }, { field: 'university', label: 'Universidade' }, { field: 'education', label: 'Formação' }, { field: 'image', label: 'Imagem' }]
+  },
+  differentials: {
+    label: 'Diferenciais', endpoint: '/differentials', idField: 'id_differential', requiresUserOnCreate: true,
+    fields: [{ name: 'description', label: 'Descrição', type: 'textarea', required: true, placeholder: 'Descrição do diferencial' }],
+    columns: [{ field: 'description', label: 'Descrição' }]
+  },
+  item: {
+    label: 'Itens do Catálogo', endpoint: '/item', idField: 'id_item', requiresUserOnCreate: true,
+    fields: [
+      { name: 'title', label: 'Título', type: 'text', required: true, placeholder: 'Nome do produto ou serviço' },
+      { name: 'short_description', label: 'Descrição curta', type: 'text', required: true, placeholder: 'Descrição exibida no card' },
+      { name: 'modal_description', label: 'Descrição completa', type: 'textarea', placeholder: 'Descrição exibida no modal' }
+    ],
+    columns: [{ field: 'title', label: 'Título' }, { field: 'short_description', label: 'Descrição curta' }, { field: 'modal_description', label: 'Descrição completa' }]
+  },
+  message: {
+    label: 'Mensagens', endpoint: '/message', idField: 'id_message', requiresUserOnCreate: false,
+    fields: [
+      { name: 'name', label: 'Nome', type: 'text', required: true, placeholder: 'Nome' },
+      { name: 'email', label: 'E-mail', type: 'email', required: true, placeholder: 'email@exemplo.com' },
+      { name: 'message', label: 'Mensagem', type: 'textarea', required: true, placeholder: 'Mensagem recebida' }
+    ],
+    columns: [{ field: 'name', label: 'Nome' }, { field: 'email', label: 'E-mail' }, { field: 'message', label: 'Mensagem' }]
+  },
+  location: {
+    label: 'Localização', endpoint: '/location', idField: 'id_location', requiresUserOnCreate: true,
+    fields: [
+      { name: 'maps_url', label: 'URL do mapa', type: 'url', placeholder: 'https://maps.google.com/embed?...' },
+      { name: 'address', label: 'Endereço', type: 'text', required: true, placeholder: 'Rua, número — Bairro, Cidade - UF' }
+    ],
+    columns: [{ field: 'maps_url', label: 'Mapa' }, { field: 'address', label: 'Endereço' }]
+  },
+  info: {
+    label: 'Informações de Contato', endpoint: '/info', idField: 'id_info', requiresUserOnCreate: true,
+    fields: [
+      { name: 'service_text', label: 'Horário e texto de atendimento', type: 'textarea', required: true, placeholder: 'Segunda a sexta, das 9h às 18h' },
+      { name: 'phone', label: 'Telefone', type: 'tel', placeholder: '(11) 4515-0556' },
+      { name: 'whatsapp', label: 'WhatsApp', type: 'tel', placeholder: '(11) 97199-3704' }
+    ],
+    columns: [{ field: 'service_text', label: 'Atendimento' }, { field: 'phone', label: 'Telefone' }, { field: 'whatsapp', label: 'WhatsApp' }]
+  }
+};
+
+const PAGES = [
+  {
+    key: 'home', label: 'Home', icon: 'house-fill', title: 'Home', description: 'Atualize os conteúdos exibidos na página inicial.',
+    tabs: [{ resource: 'main', label: 'Home Main' }, { resource: 'carousel', label: 'Carousel' }]
+  },
+  {
+    key: 'sobre', label: 'Sobre', icon: 'person-fill', title: 'Sobre', description: 'Atualize os conteúdos da página Sobre.',
+    tabs: [{ resource: 'history', label: 'História' }, { resource: 'principles', label: 'Princípios' }, { resource: 'team', label: 'Equipe' }, { resource: 'differentials', label: 'Diferenciais' }]
+  },
+  {
+    key: 'catalogo', label: 'Catálogo', icon: 'grid-fill', title: 'Catálogo', description: 'Cadastre e atualize os itens exibidos no catálogo.',
+    tabs: [{ resource: 'item', label: 'Itens do catálogo' }]
+  },
+  {
+    key: 'contato', label: 'Contato', icon: 'envelope-fill', title: 'Contato', description: 'Atualize as informações e mensagens do site.',
+    tabs: [{ resource: 'message', label: 'Mensagens' }, { resource: 'location', label: 'Localização' }, { resource: 'info', label: 'Informações' }]
+  }
+];
+
+const resourceCache = Object.fromEntries(Object.keys(RESOURCES).map(key => [key, []]));
+const loadingResources = new Set();
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character]);
+}
+
+function normaliseRows(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.rows)) return payload.rows;
+  return payload ? [payload] : [];
+}
+
+async function apiRequest(path, options = {}) {
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) }
+  });
+  const raw = await response.text();
+  let payload = null;
+  try { payload = raw ? JSON.parse(raw) : null; } catch { payload = raw; }
+  if (!response.ok) {
+    const message = payload?.error || payload?.message || `Erro HTTP ${response.status}`;
+    throw new Error(message);
+  }
+  return payload;
+}
+
+function renderNavigation() {
+  const navigation = document.getElementById('page-navigation');
+  navigation.innerHTML = PAGES.map((page, index) => `<a href="#" class="${index === 0 ? 'active' : ''}" data-page="${page.key}"><i class="bi bi-${page.icon}"></i><span>${page.label}</span></a>`).join('');
+}
+
+function inputMarkup(resourceKey, field) {
+  const id = `field-${resourceKey}-${field.name}`;
+  const required = field.required ? ' required' : '';
+  const common = `id="${id}" name="${field.name}" class="form-control" placeholder="${escapeHtml(field.placeholder || '')}"${required}`;
+  const control = field.type === 'textarea' ? `<textarea ${common} rows="4"></textarea>` : `<input type="${field.type || 'text'}" ${common}>`;
+  return `<div class="col-md-${field.type === 'textarea' ? '12' : '6'}"><label class="form-label" for="${id}">${escapeHtml(field.label)}</label>${control}</div>`;
+}
+
+function renderPane(resourceKey, isFirst) {
+  const resource = RESOURCES[resourceKey];
+  const fields = resource.fields.map(field => inputMarkup(resourceKey, field)).join('');
+  const headers = resource.columns.map(column => `<th>${escapeHtml(column.label)}</th>`).join('');
+  const help = resourceKey === 'item' ? '<p class="cms-help">Clique em <strong>Editar</strong> na tabela para carregar um item no formulário.</p>' : '<p class="cms-help">Use a tabela abaixo para editar ou excluir um registro existente.</p>';
+  return `<div class="cms-pane ${isFirst ? 'active' : ''}" data-resource="${resourceKey}">
+    <div class="admin-card">
+      <h2><i class="bi bi-pencil-square"></i>${escapeHtml(resource.label)} <span class="badge-table">${escapeHtml(resource.endpoint.slice(1))}</span></h2>
+      ${help}
+      <form class="crud-form" data-resource="${resourceKey}">
+        <input type="hidden" name="id" value="">
+        <div class="row g-3">${fields}</div>
+        <div class="btn-row">
+          <button type="submit" class="btn btn-roxo" data-role="submit"><i class="bi bi-plus-circle-fill me-1"></i>Criar registro</button>
+          <button type="button" class="btn btn-dourado" data-action="reset" data-resource="${resourceKey}"><i class="bi bi-x-circle me-1"></i>Cancelar</button>
+        </div>
+      </form>
+    </div>
+    <div class="admin-card">
+      <h2><i class="bi bi-table"></i>Registros <span class="badge-table">${escapeHtml(resource.endpoint.slice(1))}</span></h2>
+      <div class="table-responsive"><table class="table table-bordered table-hover"><thead><tr><th>#</th>${headers}<th>Ações</th></tr></thead><tbody id="tb-${resourceKey}"></tbody></table></div>
+    </div>
+  </div>`;
+}
+
+function renderPages() {
+  const main = document.getElementById('cms-main');
+  main.innerHTML = PAGES.map((page, pageIndex) => {
+    const tabs = page.tabs.length > 1 ? `<div class="cms-tabs" role="tablist">${page.tabs.map((tab, tabIndex) => `<button type="button" class="cms-tab ${tabIndex === 0 ? 'active' : ''}" data-page-tab="${page.key}" data-resource-tab="${tab.resource}" role="tab">${escapeHtml(tab.label)}</button>`).join('')}</div>` : '';
+    const panes = page.tabs.map((tab, tabIndex) => renderPane(tab.resource, tabIndex === 0)).join('');
+    return `<section id="page-${page.key}" class="cms-page ${pageIndex === 0 ? 'active' : ''}" data-page="${page.key}">
+      <div class="page-title"><h1><i class="bi bi-${page.icon} me-2"></i>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.description)}</p></div>
+      ${tabs}<div class="cms-panes">${panes}</div>
+    </section>`;
+  }).join('');
+}
+
+function pageForResource(resourceKey) {
+  return PAGES.find(page => page.tabs.some(tab => tab.resource === resourceKey));
+}
+
+function showPage(pageKey) {
+  const page = PAGES.find(item => item.key === pageKey) || PAGES[0];
+  document.querySelectorAll('.cms-page').forEach(element => element.classList.toggle('active', element.dataset.page === page.key));
+  document.querySelectorAll('#page-navigation a').forEach(element => element.classList.toggle('active', element.dataset.page === page.key));
+  page.tabs.forEach(tab => loadResource(tab.resource));
+}
+
+function showResource(resourceKey) {
+  const page = pageForResource(resourceKey);
+  if (!page) return;
+  showPage(page.key);
+  document.querySelectorAll(`[data-page-tab="${page.key}"]`).forEach(button => button.classList.toggle('active', button.dataset.resourceTab === resourceKey));
+  document.querySelectorAll(`#page-${page.key} .cms-pane`).forEach(pane => pane.classList.toggle('active', pane.dataset.resource === resourceKey));
+}
+
+function setFormMode(resourceKey, editing) {
+  const form = document.querySelector(`form[data-resource="${resourceKey}"]`);
+  if (!form) return;
+  const submit = form.querySelector('[data-role="submit"]');
+  submit.innerHTML = editing ? '<i class="bi bi-floppy-fill me-1"></i>Salvar alterações' : '<i class="bi bi-plus-circle-fill me-1"></i>Criar registro';
+  form.classList.toggle('is-editing', editing);
+}
+
+function resetForm(resourceKey) {
+  const form = document.querySelector(`form[data-resource="${resourceKey}"]`);
+  if (!form) return;
+  form.reset();
+  form.querySelector('input[name="id"]').value = '';
+  setFormMode(resourceKey, false);
+}
+
+function editRecord(resourceKey, id) {
+  const resource = RESOURCES[resourceKey];
+  const row = resourceCache[resourceKey].find(item => String(item[resource.idField]) === String(id));
+  const form = document.querySelector(`form[data-resource="${resourceKey}"]`);
+  if (!row || !form) return;
+  showResource(resourceKey);
+  resource.fields.forEach(field => {
+    const input = form.elements.namedItem(field.name);
+    if (input) input.value = row[field.name] ?? '';
+  });
+  form.querySelector('input[name="id"]').value = row[resource.idField];
+  setFormMode(resourceKey, true);
+  form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const firstInput = form.querySelector('input:not([type="hidden"]), textarea');
+  if (firstInput) firstInput.focus({ preventScroll: true });
+}
+
+function renderTable(resourceKey) {
+  const resource = RESOURCES[resourceKey];
+  const tbody = document.getElementById(`tb-${resourceKey}`);
+  if (!tbody) return;
+  const rows = resourceCache[resourceKey];
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="${resource.columns.length + 2}" class="table-state">Nenhum registro encontrado.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map((row, index) => {
+    const id = row[resource.idField];
+    const cells = resource.columns.map(column => `<td><span class="cell-preview" title="${escapeHtml(row[column.field] ?? '')}">${escapeHtml(row[column.field] || '—')}</span></td>`).join('');
+    return `<tr><td>${index + 1}</td>${cells}<td><div class="crud-actions" role="group" aria-label="Ações do registro"><button type="button" class="btn-sm-roxo" data-action="edit" data-resource="${resourceKey}" data-id="${escapeHtml(id)}" title="Editar registro"><i class="bi bi-pencil-fill me-1"></i>Editar</button><button type="button" class="btn-sm-danger" data-action="delete" data-resource="${resourceKey}" data-id="${escapeHtml(id)}" title="Excluir registro"><i class="bi bi-trash-fill me-1"></i>Excluir</button></div></td></tr>`;
+  }).join('');
+}
+
+async function loadResource(resourceKey) {
+  if (loadingResources.has(resourceKey)) return;
+  loadingResources.add(resourceKey);
+  const resource = RESOURCES[resourceKey];
+  const tbody = document.getElementById(`tb-${resourceKey}`);
+  if (tbody) tbody.innerHTML = `<tr><td colspan="${resource.columns.length + 2}" class="table-state">Carregando...</td></tr>`;
+  try {
+    resourceCache[resourceKey] = normaliseRows(await apiRequest(resource.endpoint));
+    renderTable(resourceKey);
+  } catch (error) {
+    resourceCache[resourceKey] = [];
+    if (tbody) tbody.innerHTML = `<tr><td colspan="${resource.columns.length + 2}" class="table-state">Não foi possível carregar: ${escapeHtml(error.message)}</td></tr>`;
+  } finally {
+    loadingResources.delete(resourceKey);
+  }
+}
+
+function formDataToObject(form) {
+  return Object.fromEntries([...new FormData(form).entries()].map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value]));
+}
+
+async function handleSubmit(event) {
+  event.preventDefault();
+  const form = event.target;
+  const resourceKey = form.dataset.resource;
+  const resource = RESOURCES[resourceKey];
+  const data = formDataToObject(form);
+  const id = data.id;
+  delete data.id;
+  if (!id && resource.requiresUserOnCreate) data.id_user = CMS_USER_ID;
+  const method = id ? 'PUT' : 'POST';
+  const path = id ? `${resource.endpoint}/${encodeURIComponent(id)}` : resource.endpoint;
+  const submit = form.querySelector('[data-role="submit"]');
+  submit.disabled = true;
+  try {
+    await apiRequest(path, { method, body: JSON.stringify(data) });
+    showToast(id ? 'Registro atualizado com sucesso.' : 'Registro criado com sucesso.', 'success');
+    resetForm(resourceKey);
+    await loadResource(resourceKey);
+  } catch (error) {
+    showToast(error.message || 'Não foi possível salvar o registro.', 'danger');
+  } finally {
+    submit.disabled = false;
+  }
+}
+
+async function deleteRecord(resourceKey, id) {
+  const resource = RESOURCES[resourceKey];
+  const row = resourceCache[resourceKey].find(item => String(item[resource.idField]) === String(id));
+  const label = row?.[resource.columns[0]?.field] || resource.label;
+  if (!window.confirm(`Excluir “${label}”? Esta ação não pode ser desfeita.`)) return;
+  try {
+    await apiRequest(`${resource.endpoint}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const form = document.querySelector(`form[data-resource="${resourceKey}"]`);
+    if (form?.querySelector('input[name="id"]')?.value === String(id)) resetForm(resourceKey);
+    showToast('Registro excluído com sucesso.', 'success');
+    await loadResource(resourceKey);
+  } catch (error) {
+    showToast(error.message || 'Não foi possível excluir o registro.', 'danger');
+  }
+}
+
+function showToast(message, type = 'info') {
+  const toastElement = document.getElementById('cms-toast');
+  toastElement.className = `toast border-0 toast-${type}`;
+  document.getElementById('cms-toast-message').textContent = message;
+  if (window.bootstrap?.Toast) bootstrap.Toast.getOrCreateInstance(toastElement, { delay: 3500 }).show();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderNavigation();
+  renderPages();
+
+  document.getElementById('page-navigation').addEventListener('click', event => {
+    const link = event.target.closest('[data-page]');
+    if (!link) return;
+    event.preventDefault();
+    showPage(link.dataset.page);
+  });
+
+  document.getElementById('cms-main').addEventListener('click', event => {
+    const action = event.target.closest('[data-action]');
+    const tab = event.target.closest('[data-resource-tab]');
+    if (tab) {
+      showResource(tab.dataset.resourceTab);
+      return;
+    }
+    if (!action) return;
+    const resourceKey = action.dataset.resource;
+    if (action.dataset.action === 'reset') resetForm(resourceKey);
+    if (action.dataset.action === 'edit') editRecord(resourceKey, action.dataset.id);
+    if (action.dataset.action === 'delete') deleteRecord(resourceKey, action.dataset.id);
+  });
+
+  document.getElementById('cms-main').addEventListener('submit', handleSubmit);
+  showPage('home');
+});

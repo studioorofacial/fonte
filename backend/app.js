@@ -18,14 +18,18 @@ const teamRoutes = require('./src/routes/teamRoutes.js');
 const usersRoutes = require('./src/routes/usersRoutes.js');
 const tokensRoutes = require('./src/routes/tokensRoutes.js');
 const homeInfoRoutes = require('./src/routes/homeInfoRoutes.js');
+const uploadRoutes = require('./src/routes/uploadRoutes.js');
+
 
 // 1º: middlewares de configuração SEMPRE primeiro
+
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 // 2º: rotas depois
+app.use('/api', uploadRoutes);
 app.use('/api', teamRoutes);
 app.use('/api', rolesRoutes);
 app.use('/api', principlesRoutes);

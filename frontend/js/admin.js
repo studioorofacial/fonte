@@ -190,7 +190,29 @@ function limparFormularioCarousel() {
 
 async function handleCarouselSubmit(event) {
     event.preventDefault();
+    const arquivo =
+    document.getElementById('carousel-file').files[0];
 
+if (arquivo) {
+
+    const formData = new FormData();
+
+    formData.append('imagem', arquivo);
+
+    const uploadResponse = await authFetch(
+        `${API_URL}/upload-carousel`,
+        {
+            method: 'POST',
+            body: formData
+        }
+    );
+
+    const uploadData =
+        await uploadResponse.json();
+
+    document.getElementById('carousel-background').value =
+        uploadData.path;
+}
     const id = document.getElementById('carousel-id').value;
     const dados = {
         title: document.getElementById('carousel-titulo').value,
@@ -1585,3 +1607,23 @@ async function deletarAdmin(id) {
         showToast(erro.message || 'Erro ao excluir administrador.', 'danger');
     }
 }
+document.addEventListener('DOMContentLoaded', () => {
+
+    const fileInput = document.getElementById('carousel-file');
+
+    if (!fileInput) return;
+
+    fileInput.addEventListener('change', function () {
+
+        const file = this.files[0];
+
+        if (!file) return;
+
+        const preview =
+            document.getElementById('carousel-preview');
+
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+    });
+
+});
