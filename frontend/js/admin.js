@@ -1,3 +1,10 @@
+// ============================================================
+// ADMIN.JS
+// Toda a lógica JS da página admin.html em um único arquivo:
+//  1) CRUD via API (catálogo, home, equipe, princípios, etc.)
+//  2) Autenticação, sessão e modais de edição/exclusão
+// ============================================================
+
 const API_URL = 'http://localhost:8080/api';
 
 let itensCache = []; // guarda os itens carregados, pra reaproveitar na edição sem nova requisição
@@ -114,7 +121,7 @@ async function deletarItemAtual() {
         return;
     }
 
-    const confirmar = confirm('Tem certeza que deseja excluir este item?');
+    const confirmar = await confirmarExclusao('Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.');
     if (!confirmar) return;
 
     try {
@@ -262,7 +269,7 @@ async function deletarCarouselAtual() {
         return;
     }
 
-    if (!confirm('Tem certeza que deseja excluir este slide?')) return;
+    if (!(await confirmarExclusao('Tem certeza que deseja excluir este slide? Esta ação não pode ser desfeita.'))) return;
 
     try {
         const response = await authFetch(`${API_URL}/carousel/${id}`, { method: 'DELETE' });
@@ -378,7 +385,7 @@ async function deletarHomeInfoAtual() {
         return;
     }
 
-    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+    if (!(await confirmarExclusao('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.'))) return;
 
     try {
         const response = await authFetch(`${API_URL}/home-info/${id}`, { method: 'DELETE' });
@@ -488,7 +495,7 @@ async function deletarContatoInfoAtual() {
         return;
     }
 
-    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+    if (!(await confirmarExclusao('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.'))) return;
 
     try {
         const response = await authFetch(`${API_URL}/info/${id}`, { method: 'DELETE' });
@@ -673,7 +680,7 @@ async function deletarHistoriaAtual() {
         return;
     }
 
-    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+    if (!(await confirmarExclusao('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.'))) return;
 
     try {
         const response = await authFetch(`${API_URL}/history/${id}`, { method: 'DELETE' });
@@ -793,7 +800,7 @@ async function deletarPrincipioAtual() {
         return;
     }
 
-    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+    if (!(await confirmarExclusao('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.'))) return;
 
     try {
         const response = await authFetch(`${API_URL}/principles/${id}`, { method: 'DELETE' });
@@ -917,7 +924,7 @@ async function deletarEquipeAtual() {
         return;
     }
 
-    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+    if (!(await confirmarExclusao('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.'))) return;
 
     try {
         const response = await authFetch(`${API_URL}/team/${id}`, { method: 'DELETE' });
@@ -1029,7 +1036,7 @@ async function deletarDiferencialAtual() {
         return;
     }
 
-    if (!confirm('Tem certeza que deseja excluir este registro?')) return;
+    if (!(await confirmarExclusao('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.'))) return;
 
     try {
         const response = await authFetch(`${API_URL}/differentials/${id}`, { method: 'DELETE' });
@@ -1083,7 +1090,7 @@ function renderizarTabelaMensagens(itens) {
 }
 
 async function deletarMensagemPorId(id) {
-    if (!confirm('Tem certeza que deseja excluir esta mensagem?')) return;
+    if (!(await confirmarExclusao('Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.'))) return;
 
     try {
         const response = await authFetch(`${API_URL}/message/${id}`, { method: 'DELETE' });
@@ -1587,7 +1594,7 @@ async function deletarAdmin(id) {
         return;
     }
 
-    if (!confirm('Tem certeza que deseja excluir este administrador?')) return;
+    if (!(await confirmarExclusao('Tem certeza que deseja excluir este administrador? Esta ação não pode ser desfeita.'))) return;
 
     try {
         const response = await authFetch(`${API_URL}/users/${id}`, { method: 'DELETE' });
@@ -1622,3 +1629,354 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 });
+
+// ============================================================
+// AUTENTICAÇÃO, SESSÃO E MODAIS
+// ============================================================
+
+const DB = {};
+let currentUser = null;
+let deleteCtx   = null;
+let editCtx     = null;
+
+const bsDeleteModal = null; // inicializado depois do DOM
+let _bsDelete, _bsEdit;
+
+window.addEventListener('DOMContentLoaded', () => {
+  _bsDelete = new bootstrap.Modal(document.getElementById('modal-delete'));
+  _bsEdit   = new bootstrap.Modal(document.getElementById('modal-edit'));
+
+  // Se o modal for fechado sem confirmar (Cancelar, X ou Esc),
+  // resolve a promise como "false".
+  document.getElementById('modal-delete')
+    .addEventListener('hidden.bs.modal', () => resolverConfirmacaoExclusao(false));
+
+  restaurarSessao();
+});
+
+// ============================================================
+// CONFIRMAÇÃO DE EXCLUSÃO — substitui o confirm() nativo do
+// navegador pelo modal padrão do site (#modal-delete).
+//
+// Uso: if (!(await confirmarExclusao('mensagem'))) return;
+// ============================================================
+let _resolveConfirmacaoExclusao = null;
+
+function confirmarExclusao(mensagem) {
+  const msgEl = document.getElementById('modal-delete-msg');
+  if (msgEl) {
+    msgEl.textContent = mensagem || 'Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.';
+  }
+  _bsDelete.show();
+  return new Promise((resolve) => {
+    _resolveConfirmacaoExclusao = resolve;
+  });
+}
+
+function resolverConfirmacaoExclusao(confirmado) {
+  if (_resolveConfirmacaoExclusao) {
+    _resolveConfirmacaoExclusao(confirmado);
+    _resolveConfirmacaoExclusao = null;
+  }
+}
+
+function dbGet(t)        { return DB[t] || []; }
+function dbInsert(t, r)  { if (!DB[t]) DB[t] = []; r._id = Date.now(); DB[t].push(r); }
+function dbUpdate(t,id,d){ DB[t] = (DB[t]||[]).map(r => r._id==id ? {...r,...d} : r); }
+function dbDelete(t, id) { DB[t] = (DB[t]||[]).filter(r => r._id!=id); }
+
+// role_id conforme a tabela "roles" do banco: 1=root, 2=admin, 3=secretaria
+const roleLabels = {
+  1: { label:'Root / Super Admin', cls:'role-super' },
+  2: { label:'Admin',              cls:'role-admin' },
+  3: { label:'Secretária',         cls:'role-editor' },
+};
+
+// ============================================================
+// AUTH — integrado com a API real (JWT access token + refresh cookie)
+// ============================================================
+
+// accessToken fica em sessionStorage: sobrevive a um F5 na mesma aba,
+// mas some ao fechar a aba. O refreshToken (mais sensível) NUNCA fica
+// aqui — ele vive só em cookie httpOnly, o JS nem consegue lê-lo.
+function getAccessToken() {
+  return sessionStorage.getItem('accessToken');
+}
+
+function setSession(accessToken, user) {
+  sessionStorage.setItem('accessToken', accessToken);
+  sessionStorage.setItem('user', JSON.stringify(user));
+}
+
+function clearSession() {
+  sessionStorage.removeItem('accessToken');
+  sessionStorage.removeItem('user');
+}
+
+// Wrapper de fetch que já manda o token e tenta renovautomaticamente
+// se o access token tiver expirado (erro 403 do middleware de auth).
+async function authFetch(url, options = {}) {
+  const doFetch = (token) => fetch(url, {
+    ...options,
+    credentials: 'include',
+    headers: {
+      ...(options.headers || {}),
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  let response = await doFetch(getAccessToken());
+
+  if (response.status === 403) {
+    const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+
+    if (refreshRes.ok) {
+      const { accessToken } = await refreshRes.json();
+      sessionStorage.setItem('accessToken', accessToken);
+      response = await doFetch(accessToken);
+    } else {
+      doLogout();
+    }
+  }
+
+  return response;
+}
+
+function showPanel(user) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('panel-screen').style.display  = 'flex';
+  document.getElementById('topbar-name').textContent   = user.name;
+  document.getElementById('topbar-role').textContent   = roleLabels[user.role_id]?.label || 'Usuário';
+  document.getElementById('topbar-avatar').textContent = user.name.charAt(0).toUpperCase();
+
+  // Administradores: Root e Admin acessam (Admin não vê o form de criar,
+  // isso é tratado à parte). Secretária nunca vê esse link.
+  document.getElementById('nav-admins').style.display = (user.role_id === 1 || user.role_id === 2) ? 'flex' : 'none';
+
+  // Só Root pode CRIAR novos administradores — o card do formulário some pros demais
+  const cardNovoAdmin = document.getElementById('card-novo-admin');
+  if (cardNovoAdmin) cardNovoAdmin.style.display = (user.role_id === 1) ? '' : 'none';
+
+  // Secretária (role_id 3): modo somente-leitura em todo o painel —
+  // some com botões de salvar/editar/excluir/novo registro
+  document.body.classList.toggle('somente-leitura', user.role_id === 3);
+
+  currentUser = user;
+
+  // Home é a página que já vem ativa por padrão ao abrir o painel
+  carregarMainUnico(1, 'home-main');
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const errorBox = document.getElementById('login-error');
+
+  errorBox.style.display = 'none';
+
+  try {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      credentials: 'include', // necessário para o navegador salvar o cookie do refresh token
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      errorBox.style.display = 'block';
+      return;
+    }
+
+    setSession(data.accessToken, data.user);
+    showPanel(data.user);
+  } catch (erro) {
+    console.error('Erro ao fazer login:', erro);
+    errorBox.style.display = 'block';
+  }
+}
+
+async function doLogout() {
+  try {
+    await fetch(`${API_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+  } catch (erro) {
+    console.error('Erro ao fazer logout:', erro);
+  }
+
+  clearSession();
+  currentUser = null;
+  document.getElementById('panel-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('nav-admins').style.display = 'none';
+  document.body.classList.remove('somente-leitura');
+}
+
+// Ao carregar a página, se já tiver uma sessão salva (ex: F5), pula o login
+function restaurarSessao() {
+  const token = getAccessToken();
+  const userRaw = sessionStorage.getItem('user');
+  if (token && userRaw) {
+    showPanel(JSON.parse(userRaw));
+  }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(page, link) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if (link) link.classList.add('active');
+  if (page === 'admins') { renderAdmins(); renderAdminStats(); }
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(link, page, tab) {
+  const parent = link.closest('.page');
+  parent.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  parent.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  link.classList.add('active');
+  document.getElementById(page+'-tab-'+tab).classList.add('active');
+}
+
+// ============================================================
+// FORM SUBMIT
+// ============================================================
+const schemas = {
+  home_main:     ['home_Titulo','home_subtitulo'],
+  home_carousel: ['Image_Titulo','Image_Descricao','Image_Backgroud'],
+  home_info:     ['info_texto','info_image'],
+  sobre_main:    ['sobre_Titulo','sobre_subtitulo'],
+  historia:      ['Historia_titulo','Historia_texto','Historia_Image'],
+  principios:    ['principios_titulo','principios_texto','principios_icone'],
+  equipe:        ['equipe_especialista','equipe_universidade','equipe_formacao','equipe_image'],
+  diferenciais:  ['Diferenciais_descricao'],
+  catalogo_main: ['catalogo_Titulo','contato_subtitulo'],
+  item_catalogo: ['item_catalogo_titulo','item_catalogo_descricao_curta','item_catalogo_descricao_modal'],
+  contato_main:  ['contato_titulo','contato_subtitulo'],
+  mensagem:      ['mensagem_nome','mensagem_email','mensagem_texto'],
+  localizacao:   ['localizacao_maps','localizacao_endereco'],
+  contato_info:  ['localizacao_maps','contato_info_telefone','contato_info_whatsapp','contato_info_texto_atendimento'],
+};
+
+function handleSubmit(e, table) {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form));
+  const id = data.id; delete data.id;
+  if (id) { dbUpdate(table, id, data); showToast('Registro atualizado!','success'); }
+  else    { dbInsert(table, data);     showToast('Registro inserido!','success'); }
+  form.reset();
+  renderTable(table);
+}
+
+function renderTable(table) {
+  const tbody  = document.getElementById('tb-'+table);
+  if (!tbody) return;
+  const rows   = dbGet(table);
+  const fields = schemas[table] || [];
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="${fields.length+2}" class="text-center text-muted py-3">Nenhum registro</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map((r,i) => `
+    <tr>
+      <td>${i+1}</td>
+      ${fields.map(f=>`<td title="${r[f]||''}">${trunc(r[f]||'—',35)}</td>`).join('')}
+      <td>
+        <button class="btn-sm-roxo me-1" onclick="openEdit('${table}',${r._id})"><i class="bi bi-pencil-fill"></i> Editar</button>
+        <button class="btn-sm-danger"    onclick="confirmDelete('${table}',${r._id})"><i class="bi bi-trash-fill"></i></button>
+      </td>
+    </tr>`).join('');
+}
+
+function trunc(s,n){ s=String(s); return s.length>n ? s.slice(0,n)+'…' : s; }
+
+// ============================================================
+// EDIT MODAL
+// ============================================================
+function openEdit(table, id) {
+  const row = dbGet(table).find(r=>r._id==id);
+  if (!row) return;
+  editCtx = { table, id };
+  const fields = schemas[table] || [];
+  document.getElementById('modal-edit-title').innerHTML = `<i class="bi bi-pencil-fill me-2"></i>Editar — ${table}`;
+  document.getElementById('modal-edit-body').innerHTML = `<div class="row g-3">${
+    fields.map(f=>`<div class="col-12">
+      <label class="form-label">${f}</label>
+      ${f.toLowerCase().includes('texto')||f.toLowerCase().includes('descricao')
+        ? `<textarea class="form-control" id="edit-${f}" rows="3">${row[f]||''}</textarea>`
+        : `<input type="text" class="form-control" id="edit-${f}" value="${row[f]||''}">`}
+    </div>`).join('')
+  }</div>`;
+  _bsEdit.show();
+}
+
+function saveEdit() {
+  if (!editCtx) return;
+  const fields = schemas[editCtx.table] || [];
+  const data = {};
+  fields.forEach(f => { const el=document.getElementById('edit-'+f); if(el) data[f]=el.value; });
+  dbUpdate(editCtx.table, editCtx.id, data);
+  renderTable(editCtx.table);
+  _bsEdit.hide();
+  showToast('Registro atualizado!','success');
+}
+
+// ============================================================
+// DELETE
+// ============================================================
+function confirmDelete(table, id) {
+  deleteCtx = { table, id };
+  _bsDelete.show();
+}
+
+function doDelete() {
+  if (!deleteCtx) return;
+  if (deleteCtx.id) {
+    dbDelete(deleteCtx.table, deleteCtx.id);
+    renderTable(deleteCtx.table);
+    showToast('Registro excluído!','danger');
+  }
+  _bsDelete.hide();
+}
+
+// ============================================================
+// PW UTILS
+// ============================================================
+function checkStrength(input){
+  const v=input.value,bar=document.getElementById('pw-bar'),hint=document.getElementById('pw-hint');
+  let s=0;
+  if(v.length>=8)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;
+  bar.className='pw-bar'+(s?' s'+s:'');
+  hint.textContent=v.length?['','Fraca','Razoável','Boa','Forte ✓'][s]:'';
+}
+
+function togglePw(id,btn){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.type=el.type==='password'?'text':'password';
+  btn.innerHTML=el.type==='password'?'<i class="bi bi-eye"></i>':'<i class="bi bi-eye-slash"></i>';
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg, type='success'){
+  const el=document.getElementById('main-toast');
+  el.className=`toast align-items-center text-white border-0 bg-${type==='success'?'success':type==='danger'?'danger':'secondary'}`;
+  document.getElementById('toast-msg').textContent=msg;
+  new bootstrap.Toast(el,{delay:2800}).show();
+}
