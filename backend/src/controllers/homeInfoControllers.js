@@ -5,6 +5,7 @@ const {
     updateHomeInfo,
     deleteHomeInfo
 } = require('../models/homeInfoModel');
+const { apagarArquivoDeUpload } = require('../utils/uploadHelper');
 
 // GET /api/home-info → lista todos
 async function listHomeInfo(req, res) {
@@ -61,10 +62,19 @@ async function editHomeInfo(req, res) {
             return res.status(400).json({ error: 'text é obrigatório' });
         }
 
+        // Se a imagem está sendo trocada por outra, guarda a antiga pra
+        // apagar depois que a atualização for confirmada com sucesso
+        const registroAtual = await getHomeInfoById(id);
+        const imagemAntiga = registroAtual?.image;
+
         const affectedRows = await updateHomeInfo(id, text, image);
 
         if (affectedRows === 0) {
             return res.status(404).json({ error: 'Registro não encontrado' });
+        }
+
+        if (imagemAntiga && imagemAntiga !== image) {
+            apagarArquivoDeUpload(imagemAntiga);
         }
 
         res.status(200).json({ message: 'Atualizado com sucesso' });
@@ -78,10 +88,18 @@ async function editHomeInfo(req, res) {
 async function removeHomeInfo(req, res) {
     try {
         const { id } = req.params;
+
+        // Busca o registro ANTES de excluir, pra saber qual imagem apagar
+        const registro = await getHomeInfoById(id);
+
         const affectedRows = await deleteHomeInfo(id);
 
         if (affectedRows === 0) {
             return res.status(404).json({ error: 'Registro não encontrado' });
+        }
+
+        if (registro?.image) {
+            apagarArquivoDeUpload(registro.image);
         }
 
         res.status(200).json({ message: 'Excluído com sucesso' });

@@ -125,20 +125,20 @@
     <!-- SIDEBAR -->
     <nav class="sidebar">
       <div class="nav-section"><span>Páginas</span></div>
-      <a href="#" class="active" onclick="showPage('home',this); carregarMainUnico(1,'home-main')">
+      <a href="#" class="active" data-page="home" onclick="showPage('home',this); carregarMainUnico(1,'home-main')">
         <i class="bi bi-house-fill"></i><span>Home</span>
       </a>
-      <a href="#" onclick="showPage('catalogo',this); carregarMainUnico(2,'catalogo-main')">
+      <a href="#" data-page="catalogo" onclick="showPage('catalogo',this); carregarMainUnico(2,'catalogo-main')">
         <i class="bi bi-grid-fill"></i><span>Catálogo</span>
       </a>
-      <a href="#" onclick="showPage('contato',this); carregarMainUnico(3,'contato-main')">
+      <a href="#" data-page="contato" onclick="showPage('contato',this); carregarMainUnico(3,'contato-main')">
         <i class="bi bi-envelope-fill"></i><span>Contato</span>
       </a>
-      <a href="#" onclick="showPage('sobre',this); carregarMainUnico(4,'sobre-main')">
+      <a href="#" data-page="sobre" onclick="showPage('sobre',this); carregarMainUnico(4,'sobre-main')">
         <i class="bi bi-person-fill"></i><span>Sobre</span>
       </a>
       <div class="nav-section"><span>Sistema</span></div>
-      <a href="#" id="nav-admins" style="display:none" onclick="showPage('admins',this); carregarAdmins()">
+      <a href="#" id="nav-admins" data-page="admins" style="display:none" onclick="showPage('admins',this); carregarAdmins()">
         <i class="bi bi-shield-lock-fill"></i><span>Administradores</span>
       </a>
     </nav>
@@ -155,9 +155,9 @@
 
         <!-- TABS -->
         <ul class="nav nav-tabs">
-          <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'home','main'); carregarMainUnico(1,'home-main')">Home Main</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'home','carousel'); carregarCarousel()">Carousel</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'home','info'); carregarHomeInfo()">Info</a></li>
+          <li class="nav-item"><a class="nav-link active" data-tab="main" onclick="switchTab(this,'home','main'); carregarMainUnico(1,'home-main')">Home Main</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="carousel" onclick="switchTab(this,'home','carousel'); carregarCarousel()">Carousel</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="info" onclick="switchTab(this,'home','info'); carregarHomeInfo()">Info</a></li>
         </ul>
         <div class="tab-content">
 
@@ -265,8 +265,32 @@
                 <input type="hidden" id="home-info-id" value="">
                 <div class="row g-3">
                   <div class="col-md-6">
-                    <label class="form-label">Imagem (caminho/URL)</label>
-                    <input type="text" class="form-control" id="home-info-imagem" placeholder="img/home/home2.jpg">
+                    <label class="form-label">Imagem</label>
+
+                    <input
+                        type="file"
+                        class="form-control"
+                        id="home-info-file"
+                        accept="image/*">
+
+                    <input
+                        type="text"
+                        class="form-control mt-2"
+                        id="home-info-imagem"
+                        placeholder="img/home/home2.jpg"
+                        readonly>
+
+                    <img
+                        id="home-info-preview"
+                        src=""
+                        style="
+                            display:none;
+                            max-width:100%;
+                            max-height:200px;
+                            margin-top:10px;
+                            border-radius:8px;
+                            border:1px solid #ddd;
+                        ">
                   </div>
                   <div class="col-12">
                     <label class="form-label">Texto</label>
@@ -299,11 +323,11 @@
           <p>Gerencie o conteúdo da página Sobre.</p>
         </div>
         <ul class="nav nav-tabs">
-          <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'sobre','main'); carregarMainUnico(4,'sobre-main')">Sobre Main</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'sobre','historia'); carregarHistoria()">História</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'sobre','principios'); carregarPrincipios()">Princípios</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'sobre','equipe'); carregarEquipe()">Equipe</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'sobre','diferenciais'); carregarDiferenciais()">Diferenciais</a></li>
+          <li class="nav-item"><a class="nav-link active" data-tab="main" onclick="switchTab(this,'sobre','main'); carregarMainUnico(4,'sobre-main')">Sobre Main</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="historia" onclick="switchTab(this,'sobre','historia'); carregarHistoria()">História</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="principios" onclick="switchTab(this,'sobre','principios'); carregarPrincipios()">Princípios</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="equipe" onclick="switchTab(this,'sobre','equipe'); carregarEquipe()">Equipe</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="diferenciais" onclick="switchTab(this,'sobre','diferenciais'); carregarDiferenciais()">Diferenciais</a></li>
         </ul>
         <div class="tab-content">
 
@@ -348,8 +372,32 @@
                     <input type="text" class="form-control" id="historia-titulo" placeholder="Título" required>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">Imagem (caminho/URL)</label>
-                    <input type="text" class="form-control" id="historia-imagem" placeholder="img/2024-04-16.jpg">
+                    <label class="form-label">Imagem</label>
+
+                    <input
+                        type="file"
+                        class="form-control"
+                        id="historia-file"
+                        accept="image/*">
+
+                    <input
+                        type="text"
+                        class="form-control mt-2"
+                        id="historia-imagem"
+                        placeholder="img/2024-04-16.jpg"
+                        readonly>
+
+                    <img
+                        id="historia-preview"
+                        src=""
+                        style="
+                            display:none;
+                            max-width:100%;
+                            max-height:200px;
+                            margin-top:10px;
+                            border-radius:8px;
+                            border:1px solid #ddd;
+                        ">
                   </div>
                   <div class="col-12">
                     <label class="form-label">Texto</label>
@@ -434,8 +482,32 @@
                     <input type="text" class="form-control" id="equipe-formacao" placeholder="Ex: Pós-graduada em...">
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">Imagem (caminho/URL ou ícone Bootstrap)</label>
-                    <input type="text" class="form-control" id="equipe-imagem" placeholder="bi bi-person-circle">
+                    <label class="form-label">Foto</label>
+
+                    <input
+                        type="file"
+                        class="form-control"
+                        id="equipe-file"
+                        accept="image/*">
+
+                    <input
+                        type="text"
+                        class="form-control mt-2"
+                        id="equipe-imagem"
+                        placeholder="bi bi-person-circle (ou faça upload de uma foto acima)">
+
+                    <img
+                        id="equipe-preview"
+                        src=""
+                        style="
+                            display:none;
+                            max-width:100%;
+                            max-height:200px;
+                            margin-top:10px;
+                            border-radius:8px;
+                            border:1px solid #ddd;
+                        ">
+                    <small class="text-muted">Faça upload de uma foto, ou deixe em branco / digite uma classe de ícone (ex: <code>bi bi-person-circle</code>) pra usar um avatar padrão.</small>
                   </div>
                 </div>
                 <div class="btn-row">
@@ -494,9 +566,9 @@
           <p>Gerencie o conteúdo da página de catálogo.</p>
         </div>
         <ul class="nav nav-tabs">
-          <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'catalogo','main'); carregarMainUnico(2,'catalogo-main')">Catálogo Main</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'catalogo','item'); carregarItens()">Itens</a></li>
-          <!-- <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'catalogo','item')">Itens</a></li> -->
+          <li class="nav-item"><a class="nav-link active" data-tab="main" onclick="switchTab(this,'catalogo','main'); carregarMainUnico(2,'catalogo-main')">Catálogo Main</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="item" onclick="switchTab(this,'catalogo','item'); carregarItens()">Itens</a></li>
+          <!-- <li class="nav-item"><a class="nav-link" data-tab="item" onclick="switchTab(this,'catalogo','item')">Itens</a></li> -->
         </ul>
         <div class="tab-content">
 
@@ -574,10 +646,10 @@
           <p>Gerencie o conteúdo da página de contato.</p>
         </div>
         <ul class="nav nav-tabs">
-          <li class="nav-item"><a class="nav-link active" onclick="switchTab(this,'contato','main'); carregarMainUnico(3,'contato-main')">Contato Main</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'contato','mensagem'); carregarMensagens()">Mensagens</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'contato','localizacao'); carregarLocalizacao()">Localização</a></li>
-          <li class="nav-item"><a class="nav-link" onclick="switchTab(this,'contato','info'); carregarContatoInfo()">Info Contato</a></li>
+          <li class="nav-item"><a class="nav-link active" data-tab="main" onclick="switchTab(this,'contato','main'); carregarMainUnico(3,'contato-main')">Contato Main</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="mensagem" onclick="switchTab(this,'contato','mensagem'); carregarMensagens()">Mensagens</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="localizacao" onclick="switchTab(this,'contato','localizacao'); carregarLocalizacao()">Localização</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="info" onclick="switchTab(this,'contato','info'); carregarContatoInfo()">Info Contato</a></li>
         </ul>
         <div class="tab-content">
 

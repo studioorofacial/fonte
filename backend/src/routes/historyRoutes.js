@@ -8,6 +8,20 @@ const {
     removeHistory
 } = require('../controllers/historyControllers');
 const { authenticate, authorize } = require('../middlewares/authLoginMiddleware');
+const { middlewareUpload } = require('../utils/uploadHelper');
+
+// ============================================================
+// UPLOAD DE IMAGEM DA HISTÓRIA
+// ============================================================
+router.post(
+    '/upload-history',
+    authenticate,
+    authorize(1, 2),
+    middlewareUpload('imagem'),
+    (req, res) => {
+        res.json({ path: req.imagemPath });
+    }
+);
 
 router.get('/history', listHistory);
 router.get('/history/:id', showHistory);

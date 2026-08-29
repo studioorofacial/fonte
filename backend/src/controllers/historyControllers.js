@@ -5,6 +5,7 @@ const {
     updateHistory,
     deleteHistory
 } = require('../models/historyModel');
+const { apagarArquivoDeUpload } = require('../utils/uploadHelper');
 
 // GET /api/history → lista todos
 async function listHistory(req, res) {
@@ -61,10 +62,17 @@ async function editHistory(req, res) {
             return res.status(400).json({ error: 'title e text são obrigatórios' });
         }
 
+        const registroAtual = await getHistoryById(id);
+        const imagemAntiga = registroAtual?.image;
+
         const affectedRows = await updateHistory(id, title, text, image);
 
         if (affectedRows === 0) {
             return res.status(404).json({ error: 'Registro não encontrado' });
+        }
+
+        if (imagemAntiga && imagemAntiga !== image) {
+            apagarArquivoDeUpload(imagemAntiga);
         }
 
         res.status(200).json({ message: 'Atualizado com sucesso' });
@@ -78,10 +86,17 @@ async function editHistory(req, res) {
 async function removeHistory(req, res) {
     try {
         const { id } = req.params;
+
+        const registro = await getHistoryById(id);
+
         const affectedRows = await deleteHistory(id);
 
         if (affectedRows === 0) {
             return res.status(404).json({ error: 'Registro não encontrado' });
+        }
+
+        if (registro?.image) {
+            apagarArquivoDeUpload(registro.image);
         }
 
         res.status(200).json({ message: 'Excluído com sucesso' });

@@ -5,6 +5,7 @@ const {
     updateTeam,
     deleteTeam
 } = require('../models/teamModel');
+const { apagarArquivoDeUpload } = require('../utils/uploadHelper');
 
 // GET /api/team → lista todos
 async function listTeam(req, res) {
@@ -61,10 +62,17 @@ async function editTeam(req, res) {
             return res.status(400).json({ error: 'specialist é obrigatório' });
         }
 
+        const registroAtual = await getTeamById(id);
+        const imagemAntiga = registroAtual?.image;
+
         const affectedRows = await updateTeam(id, specialist, university, education, image);
 
         if (affectedRows === 0) {
             return res.status(404).json({ error: 'Registro não encontrado' });
+        }
+
+        if (imagemAntiga && imagemAntiga !== image) {
+            apagarArquivoDeUpload(imagemAntiga);
         }
 
         res.status(200).json({ message: 'Atualizado com sucesso' });
@@ -78,10 +86,17 @@ async function editTeam(req, res) {
 async function removeTeam(req, res) {
     try {
         const { id } = req.params;
+
+        const registro = await getTeamById(id);
+
         const affectedRows = await deleteTeam(id);
 
         if (affectedRows === 0) {
             return res.status(404).json({ error: 'Registro não encontrado' });
+        }
+
+        if (registro?.image) {
+            apagarArquivoDeUpload(registro.image);
         }
 
         res.status(200).json({ message: 'Excluído com sucesso' });

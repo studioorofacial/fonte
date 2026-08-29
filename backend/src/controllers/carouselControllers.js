@@ -5,6 +5,7 @@ const {
     updateCarousel,
     deleteCarousel
 } = require('../models/carouselModel');
+const { apagarArquivoDeUpload } = require('../utils/uploadHelper');
 
 // GET /api/carousel → lista todos
 async function listCarousel(req, res) {
@@ -61,10 +62,19 @@ async function editCarousel(req, res) {
             return res.status(400).json({ error: 'title e description são obrigatórios' });
         }
 
+        // Se a imagem está sendo trocada por outra, guarda a antiga pra
+        // apagar depois que a atualização for confirmada com sucesso
+        const registroAtual = await getCarouselById(id);
+        const imagemAntiga = registroAtual?.background_image;
+
         const affectedRows = await updateCarousel(id, title, description, background_image);
 
         if (affectedRows === 0) {
             return res.status(404).json({ error: 'Registro não encontrado' });
+        }
+
+        if (imagemAntiga && imagemAntiga !== background_image) {
+            apagarArquivoDeUpload(imagemAntiga);
         }
 
         res.status(200).json({ message: 'Atualizado com sucesso' });
@@ -78,10 +88,18 @@ async function editCarousel(req, res) {
 async function removeCarousel(req, res) {
     try {
         const { id } = req.params;
+
+        // Busca o registro ANTES de excluir, pra saber qual imagem apagar
+        const registro = await getCarouselById(id);
+
         const affectedRows = await deleteCarousel(id);
 
         if (affectedRows === 0) {
             return res.status(404).json({ error: 'Registro não encontrado' });
+        }
+
+        if (registro?.background_image) {
+            apagarArquivoDeUpload(registro.background_image);
         }
 
         res.status(200).json({ message: 'Excluído com sucesso' });

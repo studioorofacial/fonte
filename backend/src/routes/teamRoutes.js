@@ -8,6 +8,20 @@ const {
     removeTeam
 } = require('../controllers/teamControllers');
 const { authenticate, authorize } = require('../middlewares/authLoginMiddleware');
+const { middlewareUpload } = require('../utils/uploadHelper');
+
+// ============================================================
+// UPLOAD DE FOTO DO MEMBRO DA EQUIPE
+// ============================================================
+router.post(
+    '/upload-team',
+    authenticate,
+    authorize(1, 2),
+    middlewareUpload('imagem'),
+    (req, res) => {
+        res.json({ path: req.imagemPath });
+    }
+);
 
 router.get('/team', listTeam);
 router.get('/team/:id', showTeam);

@@ -183,6 +183,25 @@ function editarCarousel(id) {
     document.getElementById('carousel-background').value = item.background_image || '';
     document.getElementById('carousel-descricao').value = item.description || '';
 
+    // Limpa qualquer arquivo que estivesse selecionado de antes (ex: de
+    // uma tentativa de criação cancelada), pra não subir por engano
+    // junto com a edição deste registro
+    const fileInput = document.getElementById('carousel-file');
+    if (fileInput) fileInput.value = '';
+
+    // Mostra a imagem que já está salva, pra você ver o que tem hoje
+    // antes de decidir trocar
+    const preview = document.getElementById('carousel-preview');
+    if (preview) {
+        if (item.background_image) {
+            preview.src = item.background_image;
+            preview.style.display = 'block';
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+    }
+
     document.getElementById('carousel-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar';
     document.getElementById('form-home-carousel').scrollIntoView({ behavior: 'smooth' });
 }
@@ -192,6 +211,19 @@ function limparFormularioCarousel() {
     document.getElementById('carousel-titulo').value = '';
     document.getElementById('carousel-background').value = '';
     document.getElementById('carousel-descricao').value = '';
+
+    // O <input type="file"> e a prévia não são limpos pelos .value=''
+    // acima — precisam ser resetados à parte, senão o nome do arquivo
+    // (ex: "3.jpg") continua aparecendo mesmo depois de salvar
+    const fileInput = document.getElementById('carousel-file');
+    if (fileInput) fileInput.value = '';
+
+    const preview = document.getElementById('carousel-preview');
+    if (preview) {
+        preview.src = '';
+        preview.style.display = 'none';
+    }
+
     document.getElementById('carousel-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir';
 }
 
@@ -328,6 +360,24 @@ function editarHomeInfo(id) {
     document.getElementById('home-info-imagem').value = item.image || '';
     document.getElementById('home-info-texto').value = item.text;
 
+    // Limpa qualquer arquivo selecionado de antes, pra não subir por
+    // engano junto com a edição deste registro
+    const fileInput = document.getElementById('home-info-file');
+    if (fileInput) fileInput.value = '';
+
+    // Mostra a imagem que já está salva, pra você ver o que tem hoje
+    // antes de decidir trocar
+    const preview = document.getElementById('home-info-preview');
+    if (preview) {
+        if (item.image) {
+            preview.src = item.image;
+            preview.style.display = 'block';
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+    }
+
     document.getElementById('home-info-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar';
     document.getElementById('form-home-info').scrollIntoView({ behavior: 'smooth' });
 }
@@ -336,11 +386,50 @@ function limparFormularioHomeInfo() {
     document.getElementById('home-info-id').value = '';
     document.getElementById('home-info-imagem').value = '';
     document.getElementById('home-info-texto').value = '';
+
+    // O <input type="file"> e a prévia não são limpos pelos .value=''
+    // acima — precisam ser resetados à parte
+    const fileInput = document.getElementById('home-info-file');
+    if (fileInput) fileInput.value = '';
+
+    const preview = document.getElementById('home-info-preview');
+    if (preview) {
+        preview.src = '';
+        preview.style.display = 'none';
+    }
+
     document.getElementById('home-info-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir';
 }
 
 async function handleHomeInfoSubmit(event) {
     event.preventDefault();
+
+    const arquivo = document.getElementById('home-info-file').files[0];
+
+    // Upload do arquivo (se houver), igual ao Carousel
+    if (arquivo) {
+        try {
+            const formData = new FormData();
+            formData.append('imagem', arquivo);
+
+            const uploadResponse = await authFetch(`${API_URL}/upload-home-info`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!uploadResponse.ok) {
+                const erroBody = await uploadResponse.json().catch(() => ({}));
+                throw new Error(erroBody.error || 'Falha ao enviar a imagem.');
+            }
+
+            const uploadData = await uploadResponse.json();
+            document.getElementById('home-info-imagem').value = uploadData.path;
+        } catch (erro) {
+            console.error('Erro ao enviar imagem do home info:', erro);
+            showToast(erro.message || 'Erro ao enviar a imagem.', 'danger');
+            return; // interrompe aqui — não tenta salvar sem a imagem
+        }
+    }
 
     const id = document.getElementById('home-info-id').value;
     const dados = {
@@ -621,6 +710,20 @@ function editarHistoria(id) {
     document.getElementById('historia-imagem').value = item.image || '';
     document.getElementById('historia-texto').value = item.text;
 
+    const fileInput = document.getElementById('historia-file');
+    if (fileInput) fileInput.value = '';
+
+    const preview = document.getElementById('historia-preview');
+    if (preview) {
+        if (item.image) {
+            preview.src = item.image;
+            preview.style.display = 'block';
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+    }
+
     document.getElementById('historia-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar';
     document.getElementById('form-historia').scrollIntoView({ behavior: 'smooth' });
 }
@@ -630,11 +733,47 @@ function limparFormularioHistoria() {
     document.getElementById('historia-titulo').value = '';
     document.getElementById('historia-imagem').value = '';
     document.getElementById('historia-texto').value = '';
+
+    const fileInput = document.getElementById('historia-file');
+    if (fileInput) fileInput.value = '';
+
+    const preview = document.getElementById('historia-preview');
+    if (preview) {
+        preview.src = '';
+        preview.style.display = 'none';
+    }
+
     document.getElementById('historia-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir';
 }
 
 async function handleHistoriaSubmit(event) {
     event.preventDefault();
+
+    const arquivo = document.getElementById('historia-file').files[0];
+
+    if (arquivo) {
+        try {
+            const formData = new FormData();
+            formData.append('imagem', arquivo);
+
+            const uploadResponse = await authFetch(`${API_URL}/upload-history`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!uploadResponse.ok) {
+                const erroBody = await uploadResponse.json().catch(() => ({}));
+                throw new Error(erroBody.error || 'Falha ao enviar a imagem.');
+            }
+
+            const uploadData = await uploadResponse.json();
+            document.getElementById('historia-imagem').value = uploadData.path;
+        } catch (erro) {
+            console.error('Erro ao enviar imagem da história:', erro);
+            showToast(erro.message || 'Erro ao enviar a imagem.', 'danger');
+            return;
+        }
+    }
 
     const id = document.getElementById('historia-id').value;
     const dados = {
@@ -853,6 +992,13 @@ function renderizarTabelaEquipe(itens) {
     `).join('');
 }
 
+// Um valor é considerado "imagem de verdade" (mostra prévia) se começar
+// com "img/" — se for uma classe de ícone Bootstrap (ex: "bi bi-person-circle"),
+// não faz sentido tentar carregar como <img src="...">
+function pareceCaminhoDeImagem(valor) {
+    return typeof valor === 'string' && valor.trim().startsWith('img/');
+}
+
 function editarEquipe(id) {
     const item = equipeCache.find(i => i.id_team === id);
     if (!item) return;
@@ -862,6 +1008,20 @@ function editarEquipe(id) {
     document.getElementById('equipe-universidade').value = item.university || '';
     document.getElementById('equipe-formacao').value = item.education || '';
     document.getElementById('equipe-imagem').value = item.image || '';
+
+    const fileInput = document.getElementById('equipe-file');
+    if (fileInput) fileInput.value = '';
+
+    const preview = document.getElementById('equipe-preview');
+    if (preview) {
+        if (pareceCaminhoDeImagem(item.image)) {
+            preview.src = item.image;
+            preview.style.display = 'block';
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+    }
 
     document.getElementById('equipe-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Atualizar';
     document.getElementById('form-equipe').scrollIntoView({ behavior: 'smooth' });
@@ -873,11 +1033,50 @@ function limparFormularioEquipe() {
     document.getElementById('equipe-universidade').value = '';
     document.getElementById('equipe-formacao').value = '';
     document.getElementById('equipe-imagem').value = '';
+
+    const fileInput = document.getElementById('equipe-file');
+    if (fileInput) fileInput.value = '';
+
+    const preview = document.getElementById('equipe-preview');
+    if (preview) {
+        preview.src = '';
+        preview.style.display = 'none';
+    }
+
     document.getElementById('equipe-form-btn').innerHTML = '<i class="bi bi-floppy-fill me-1"></i>Inserir';
 }
 
 async function handleEquipeSubmit(event) {
     event.preventDefault();
+
+    const arquivo = document.getElementById('equipe-file').files[0];
+
+    // Upload é opcional aqui — só sobrescreve o campo se um arquivo
+    // for escolhido; senão, mantém o que estiver digitado (ícone ou
+    // caminho manual)
+    if (arquivo) {
+        try {
+            const formData = new FormData();
+            formData.append('imagem', arquivo);
+
+            const uploadResponse = await authFetch(`${API_URL}/upload-team`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!uploadResponse.ok) {
+                const erroBody = await uploadResponse.json().catch(() => ({}));
+                throw new Error(erroBody.error || 'Falha ao enviar a foto.');
+            }
+
+            const uploadData = await uploadResponse.json();
+            document.getElementById('equipe-imagem').value = uploadData.path;
+        } catch (erro) {
+            console.error('Erro ao enviar foto da equipe:', erro);
+            showToast(erro.message || 'Erro ao enviar a foto.', 'danger');
+            return;
+        }
+    }
 
     const id = document.getElementById('equipe-id').value;
     const dados = {
@@ -1610,25 +1809,29 @@ async function deletarAdmin(id) {
     }
 }
 document.addEventListener('DOMContentLoaded', () => {
+    configurarPreviewImagem('carousel-file', 'carousel-preview');
+    configurarPreviewImagem('home-info-file', 'home-info-preview');
+    configurarPreviewImagem('historia-file', 'historia-preview');
+    configurarPreviewImagem('equipe-file', 'equipe-preview');
+});
 
-    const fileInput = document.getElementById('carousel-file');
-
+// Mostra uma prévia local (antes mesmo do upload acontecer) assim que
+// o usuário escolhe um arquivo em qualquer campo type="file" de imagem
+function configurarPreviewImagem(idInput, idPreview) {
+    const fileInput = document.getElementById(idInput);
     if (!fileInput) return;
 
     fileInput.addEventListener('change', function () {
-
         const file = this.files[0];
-
         if (!file) return;
 
-        const preview =
-            document.getElementById('carousel-preview');
+        const preview = document.getElementById(idPreview);
+        if (!preview) return;
 
         preview.src = URL.createObjectURL(file);
         preview.style.display = 'block';
     });
-
-});
+}
 
 // ============================================================
 // AUTENTICAÇÃO, SESSÃO E MODAIS
@@ -1766,8 +1969,10 @@ function showPanel(user) {
 
   currentUser = user;
 
-  // Home é a página que já vem ativa por padrão ao abrir o painel
-  carregarMainUnico(1, 'home-main');
+  // Restaura a página/aba que o usuário estava vendo antes (sobrevive
+  // a um F5 ou a um reload do Live Server). Na primeira vez que loga
+  // (sem nada salvo ainda), cai em Home > Main por padrão.
+  restaurarUltimaPaginaEAba();
 }
 
 async function doLogin() {
@@ -1836,19 +2041,62 @@ function showPage(page, link) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
+  if (!link) link = document.querySelector(`.sidebar a[data-page="${page}"]`);
   if (link) link.classList.add('active');
   if (page === 'admins') { renderAdmins(); renderAdminStats(); }
+  sessionStorage.setItem('painelUltimaPagina', page);
 }
 
 // ============================================================
 // TABS
 // ============================================================
 function switchTab(link, page, tab) {
-  const parent = link.closest('.page');
+  if (!link) link = document.querySelector(`#page-${page} .nav-link[data-tab="${tab}"]`);
+  const parent = link ? link.closest('.page') : document.getElementById('page-'+page);
   parent.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   parent.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  link.classList.add('active');
+  if (link) link.classList.add('active');
   document.getElementById(page+'-tab-'+tab).classList.add('active');
+  sessionStorage.setItem('painelUltimaAba_' + page, tab);
+}
+
+// Mapeia cada página+aba pra função que carrega os dados dela — usado
+// só na restauração após um reload, pra repor os dados da aba certa
+// (o clique normal do usuário já dispara isso pelo próprio onclick)
+const carregadoresPorAba = {
+  'home:main':          () => carregarMainUnico(1, 'home-main'),
+  'home:carousel':      carregarCarousel,
+  'home:info':          carregarHomeInfo,
+  'sobre:main':         () => carregarMainUnico(4, 'sobre-main'),
+  'sobre:historia':     carregarHistoria,
+  'sobre:principios':   carregarPrincipios,
+  'sobre:equipe':       carregarEquipe,
+  'sobre:diferenciais': carregarDiferenciais,
+  'catalogo:main':      () => carregarMainUnico(2, 'catalogo-main'),
+  'catalogo:item':      carregarItens,
+  'contato:main':       () => carregarMainUnico(3, 'contato-main'),
+  'contato:mensagem':   carregarMensagens,
+  'contato:localizacao': carregarLocalizacao,
+  'contato:info':       carregarContatoInfo
+};
+
+// Restaura a página/aba que o usuário estava vendo antes de um reload
+// (F5, ou o auto-reload do Live Server ao detectar um arquivo novo em
+// frontend/img/ depois de um upload). Sem isso, o painel sempre volta
+// pra Home > Main depois de qualquer reload.
+function restaurarUltimaPaginaEAba() {
+  const pagina = sessionStorage.getItem('painelUltimaPagina') || 'home';
+  const aba = sessionStorage.getItem('painelUltimaAba_' + pagina);
+
+  showPage(pagina, null);
+
+  if (aba) {
+    switchTab(null, pagina, aba);
+  }
+
+  const chave = pagina + ':' + (aba || 'main');
+  const carregador = carregadoresPorAba[chave];
+  if (carregador) carregador();
 }
 
 // ============================================================
