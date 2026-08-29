@@ -190,29 +190,34 @@ function limparFormularioCarousel() {
 
 async function handleCarouselSubmit(event) {
     event.preventDefault();
-    const arquivo =
-    document.getElementById('carousel-file').files[0];
 
-if (arquivo) {
+    const arquivo = document.getElementById('carousel-file').files[0];
 
-    const formData = new FormData();
+    // Upload do arquivo (se houver) — agora protegido por try/catch
+    if (arquivo) {
+        try {
+            const formData = new FormData();
+            formData.append('imagem', arquivo);
 
-    formData.append('imagem', arquivo);
+            const uploadResponse = await authFetch(`${API_URL}/upload-carousel`, {
+                method: 'POST',
+                body: formData
+            });
 
-    const uploadResponse = await authFetch(
-        `${API_URL}/upload-carousel`,
-        {
-            method: 'POST',
-            body: formData
+            if (!uploadResponse.ok) {
+                const erroBody = await uploadResponse.json().catch(() => ({}));
+                throw new Error(erroBody.error || 'Falha ao enviar a imagem.');
+            }
+
+            const uploadData = await uploadResponse.json();
+            document.getElementById('carousel-background').value = uploadData.path;
+        } catch (erro) {
+            console.error('Erro ao enviar imagem do carousel:', erro);
+            showToast(erro.message || 'Erro ao enviar a imagem.', 'danger');
+            return; // interrompe aqui — não tenta salvar o slide sem a imagem
         }
-    );
+    }
 
-    const uploadData =
-        await uploadResponse.json();
-
-    document.getElementById('carousel-background').value =
-        uploadData.path;
-}
     const id = document.getElementById('carousel-id').value;
     const dados = {
         title: document.getElementById('carousel-titulo').value,
@@ -390,17 +395,7 @@ async function deletarHomeInfoAtual() {
 // ============================================================
 // CRUD — CONTATO INFO (tabela contact_info)
 // ============================================================
-let contatoInfoCache = [];
 
-async function carregarContatoInfo() {
-    try {
-        const response = await fetch(`${API_URL}/info`);
-        contatoInfoCache = await response.json();
-        renderizarTabelaContatoInfo(contatoInfoCache);
-    } catch (erro) {
-        console.error('Erro ao carregar info de contato:', erro);
-    }
-}
 
 function renderizarTabelaContatoInfo(itens) {
     const tbody = document.getElementById('tb-contato_info');
