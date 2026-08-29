@@ -29,3 +29,39 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(erro => console.error('Erro ao carregar banner da página:', erro));
 });
+
+// ============================================================
+// MENU HAMBÚRGUER (mobile)
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const botao = document.getElementById('menu-toggle');
+    const menu = document.getElementById('main-menu');
+    if (!botao || !menu) return;
+
+    function fecharMenu() {
+        menu.classList.remove('open');
+        botao.classList.remove('active');
+        botao.setAttribute('aria-expanded', 'false');
+    }
+
+    function alternarMenu() {
+        const abrindo = !menu.classList.contains('open');
+        menu.classList.toggle('open', abrindo);
+        botao.classList.toggle('active', abrindo);
+        botao.setAttribute('aria-expanded', String(abrindo));
+    }
+
+    botao.addEventListener('click', alternarMenu);
+
+    // Fecha se clicar fora do menu/botão
+    document.addEventListener('click', (evento) => {
+        if (!menu.classList.contains('open')) return;
+        if (menu.contains(evento.target) || botao.contains(evento.target)) return;
+        fecharMenu();
+    });
+
+    // Fecha se a tela for redimensionada de volta pro tamanho desktop
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 860) fecharMenu();
+    });
+});

@@ -27,7 +27,7 @@
 
 /* ---- RESET / BASE ---- */
 * { box-sizing: border-box; }
-body { font-family: Arial, Helvetica, sans-serif; background-color: var(--fundo); color: var(--text); }
+body { font-family: Arial, Helvetica, sans-serif; background-color: var(--fundo); color: var(--text); overflow-x: hidden; }
 
 /* ============================================================
    HEADER  — idêntico ao site original
@@ -152,6 +152,7 @@ body { font-family: Arial, Helvetica, sans-serif; background-color: var(--fundo)
   font-weight: 600;
   color: var(--roxo);
   margin-bottom: 6px;
+  overflow-wrap: break-word;
 }
 
 .form-control, .form-select {
@@ -161,6 +162,8 @@ body { font-family: Arial, Helvetica, sans-serif; background-color: var(--fundo)
   font-size: 15px;
   background-color: #f9f9f9;
   transition: all .3s;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 .form-control:focus, .form-select:focus {
   border-color: var(--roxo);
@@ -170,6 +173,8 @@ body { font-family: Arial, Helvetica, sans-serif; background-color: var(--fundo)
 .form-control::placeholder { color: #999; }
 
 textarea.form-control { resize: vertical; min-height: 90px; }
+
+input[type="file"].form-control { max-width: 100%; }
 
 /* ---- BUTTONS ---- */
 .btn-roxo {
@@ -317,10 +322,11 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 /* ============================================================
    SIDEBAR
 ============================================================ */
-.panel-layout { display: flex; flex: 1; }
+.panel-layout { display: flex; flex: 1; min-width: 0; }
 
 .sidebar {
   width: 230px;
+  min-width: 230px;
   background-color: white;
   border-right: 1px solid var(--borda);
   flex-shrink: 0;
@@ -357,7 +363,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 /* ============================================================
    MAIN CONTENT
 ============================================================ */
-.main-content { flex: 1; padding: 28px; }
+.main-content { flex: 1; min-width: 0; padding: 28px; }
 
 .page { display: none; }
 .page.active { display: block; }
@@ -395,6 +401,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
   border-radius: 20px;
   border: 1px solid var(--borda);
   letter-spacing: .04em;
+  overflow-wrap: break-word;
 }
 
 /* ============================================================
@@ -506,7 +513,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
   .menu > a { padding: 8px 10px; font-size: 13px; }
 }
 @media (max-width: 768px) {
-  .sidebar { width: 54px; }
+  .sidebar { width: 54px; min-width: 54px; }
   .sidebar .nav-section, .sidebar a span { display: none; }
   .sidebar a { justify-content: center; padding: 12px; }
   .main-content { padding: 16px; }
@@ -516,6 +523,73 @@ textarea.form-control { resize: vertical; min-height: 90px; }
   .logo img { max-height: 40px; }
   .menu > a { padding: 6px 8px; font-size: 12px; }
   .login-box { padding: 32px 20px; }
+}
+
+/* ============================================================
+   RESPONSIVE — TELAS DE CELULAR (painel logado)
+============================================================ */
+@media (max-width: 600px) {
+  /* Título de cada página (banner roxo) — em desktop é 2.5rem (40px),
+     que não cabe em telas estreitas com títulos mais longos como
+     "Administradores" ou "Catálogo" (uma palavra só, sem espaço pra
+     quebrar linha, empurra a página inteira pra fora da tela) */
+  .page-title { padding: 18px 12px; }
+  .page-title h1 {
+    font-size: 1.6rem;
+    overflow-wrap: break-word; /* nunca mais deixa uma palavra sozinha estourar a largura */
+  }
+  .page-title p { font-size: 0.95rem; }
+
+  /* Menos espaço em branco desperdiçado nas bordas dos cards */
+  .admin-card { padding: 16px; border-radius: 10px; }
+  .admin-card h2 { font-size: 17px; }
+
+  /* Barra superior mais compacta */
+  .panel-topbar { padding: 10px 14px; }
+  .panel-topbar .user-name { font-size: 12px; }
+  .panel-topbar .user-role { font-size: 11px; }
+
+  /* Impede o zoom automático do iOS ao tocar em qualquer campo —
+     Safari dá zoom sozinho quando o font-size é menor que 16px */
+  .form-control, .form-select, textarea.form-control {
+    font-size: 16px;
+  }
+
+  /* Botões empilhados e em largura cheia — mais fácil de tocar,
+     e evita o efeito estranho de "2 numa linha, 1 sozinho embaixo" */
+  .btn-row { flex-direction: column; }
+  .btn-row .btn, .btn-row button {
+    width: 100%;
+    min-height: 44px; /* tamanho mínimo recomendado pra toque */
+  }
+
+  /* Abas (Home Main | Carousel | Info, etc.) — em vez de quebrar
+     linha de um jeito feio quando não cabem todas (ex: Sobre tem 5
+     abas), deixa rolar horizontalmente com o dedo */
+  .nav-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .nav-tabs .nav-link {
+    white-space: nowrap;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  /* Cards de estatística e de administrador (grid) — 1 por linha
+     em vez de espremer 2-3 numa tela estreita */
+  .row.g-3 > [class*="col-"] { min-width: 100%; }
+}
+
+/* Celular na horizontal (deitado): tela bem baixa, então a barra
+   superior fixa (sticky) sozinha já ocupa boa parte da altura —
+   deixa de ser "grudenta" só nesse caso, pra sobrar mais espaço
+   pro conteúdo */
+@media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
+  .panel-topbar { position: static; }
+  .admin-card { padding: 14px; }
 }
 
 .invalid-feedback-custom {

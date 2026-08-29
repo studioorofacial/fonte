@@ -71,6 +71,31 @@ body {
     margin-top: 0; /* Começa logo após o header */
 }
 
+/* Botão hambúrguer — só aparece em telas estreitas (ver media query) */
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    flex-shrink: 0;
+}
+.menu-toggle span {
+    display: block;
+    width: 26px;
+    height: 3px;
+    background-color: white;
+    border-radius: 2px;
+    transition: transform .2s ease, opacity .2s ease;
+}
+/* Vira um "X" quando o menu está aberto */
+.menu-toggle.active span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+.menu-toggle.active span:nth-child(2) { opacity: 0; }
+.menu-toggle.active span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
 /* Container do carousel ocupando largura total */
 .container_carousel {
     width: 100%;
@@ -137,18 +162,30 @@ body {
         height: auto;
     }
 
-    /* MENU CONTINUA À DIREITA */
+    /* MENU: some da barra e vira um painel que abre/fecha por baixo
+       do cabeçalho, controlado pelo botão hambúrguer */
+    .menu-toggle { display: flex; }
+
     .menu {
-        display: flex;
-        justify-content: flex-end;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-left: auto; /* empurra para o lado direito */
+        display: none;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: rgb(68, 20, 75);
+        gap: 0;
+        margin-left: 0;
+        box-shadow: 0 8px 12px rgba(0,0,0,.15);
     }
+    .menu.open { display: flex; }
 
     .menu > a {
-        padding: 8px 10px;
-        font-size: 14px;
+        padding: 16px 20px;
+        text-align: center;
+        width: 100%;
+        border-top: 1px solid rgba(255,255,255,.12);
     }
 
 }
@@ -181,10 +218,6 @@ body {
         max-height: 40px;
     }
     
-    .menu > a {
-        padding: 6px 8px;
-        font-size: 12px;
-    }
 }
 
 /* ------------------------------------------------------------------------------------ */
