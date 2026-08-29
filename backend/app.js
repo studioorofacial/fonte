@@ -18,6 +18,7 @@ const teamRoutes = require('./src/routes/teamRoutes.js');
 const usersRoutes = require('./src/routes/usersRoutes.js');
 const tokensRoutes = require('./src/routes/tokensRoutes.js');
 const homeInfoRoutes = require('./src/routes/homeInfoRoutes.js');
+const panelRoutes = require('./src/routes/panelRoutes.js');
 
 
 // 1º: middlewares de configuração SEMPRE primeiro
@@ -42,6 +43,7 @@ app.use('/api', historyRoutes);
 app.use('/api', usersRoutes);
 app.use('/api', tokensRoutes);
 app.use('/api', homeInfoRoutes);
+app.use('/api', panelRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'API rodando com sucesso!' });

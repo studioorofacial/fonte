@@ -1948,9 +1948,26 @@ async function authFetch(url, options = {}) {
   return response;
 }
 
-function showPanel(user) {
+async function showPanel(user) {
   document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('panel-screen').style.display  = 'flex';
+
+  const painel = document.getElementById('panel-screen');
+
+  // O HTML de verdade do painel (todas as páginas/formulários/tabelas)
+  // não vem no admin.html — só é entregue pelo backend pra quem já tem
+  // um token válido. Assim, quem inspeciona o código-fonte sem estar
+  // logado não vê nada além da tela de login.
+  try {
+    const response = await authFetch(`${API_URL}/admin-panel`);
+    if (!response.ok) throw new Error('Falha ao carregar o painel');
+    painel.innerHTML = await response.text();
+  } catch (erro) {
+    console.error('Erro ao carregar o painel:', erro);
+    doLogout();
+    return;
+  }
+
+  painel.style.display = 'flex';
   document.getElementById('topbar-name').textContent   = user.name;
   document.getElementById('topbar-role').textContent   = roleLabels[user.role_id]?.label || 'Usuário';
   document.getElementById('topbar-avatar').textContent = user.name.charAt(0).toUpperCase();
@@ -1998,7 +2015,7 @@ async function doLogin() {
     }
 
     setSession(data.accessToken, data.user);
-    showPanel(data.user);
+    await showPanel(data.user);
   } catch (erro) {
     console.error('Erro ao fazer login:', erro);
     errorBox.style.display = 'block';
@@ -2018,6 +2035,7 @@ async function doLogout() {
   clearSession();
   currentUser = null;
   document.getElementById('panel-screen').style.display = 'none';
+  document.getElementById('panel-screen').innerHTML = ''; // some com o conteúdo sensível de vez, não só esconde
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
@@ -2026,11 +2044,11 @@ async function doLogout() {
 }
 
 // Ao carregar a página, se já tiver uma sessão salva (ex: F5), pula o login
-function restaurarSessao() {
+async function restaurarSessao() {
   const token = getAccessToken();
   const userRaw = sessionStorage.getItem('user');
   if (token && userRaw) {
-    showPanel(JSON.parse(userRaw));
+    await showPanel(JSON.parse(userRaw));
   }
 }
 

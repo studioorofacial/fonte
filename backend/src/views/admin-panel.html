@@ -1,0 +1,769 @@
+
+  <!-- TOPBAR -->
+  <div class="panel-topbar">
+    <div class="brand">
+      <img src="img/novo/logo1_fd.png" alt="Logo">
+      <div class="brand-text">
+        <div class="brand-name">Studio Orofacial</div>
+        <div class="brand-sub">Painel Administrativo</div>
+      </div>
+    </div>
+    <div class="user-area">
+      <div class="text-end">
+        <div class="user-name" id="topbar-name">Admin</div>
+        <div class="user-role" id="topbar-role">Super Admin</div>
+      </div>
+      <div class="avatar" id="topbar-avatar">A</div>
+      <button class="btn-logout" onclick="doLogout()"><i class="bi bi-power me-1"></i>Sair</button>
+    </div>
+  </div>
+
+  <div class="panel-layout">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="nav-section"><span>Páginas</span></div>
+      <a href="#" class="active" data-page="home" onclick="showPage('home',this); carregarMainUnico(1,'home-main')">
+        <i class="bi bi-house-fill"></i><span>Home</span>
+      </a>
+      <a href="#" data-page="catalogo" onclick="showPage('catalogo',this); carregarMainUnico(2,'catalogo-main')">
+        <i class="bi bi-grid-fill"></i><span>Catálogo</span>
+      </a>
+      <a href="#" data-page="contato" onclick="showPage('contato',this); carregarMainUnico(3,'contato-main')">
+        <i class="bi bi-envelope-fill"></i><span>Contato</span>
+      </a>
+      <a href="#" data-page="sobre" onclick="showPage('sobre',this); carregarMainUnico(4,'sobre-main')">
+        <i class="bi bi-person-fill"></i><span>Sobre</span>
+      </a>
+      <div class="nav-section"><span>Sistema</span></div>
+      <a href="#" id="nav-admins" data-page="admins" style="display:none" onclick="showPage('admins',this); carregarAdmins()">
+        <i class="bi bi-shield-lock-fill"></i><span>Administradores</span>
+      </a>
+    </nav>
+
+    <!-- MAIN -->
+    <div class="main-content">
+
+      <!-- ==================== HOME ==================== -->
+      <div id="page-home" class="page active">
+        <div class="page-title mb-4" style="border-radius:10px">
+          <h1><i class="bi bi-house me-2"></i>Home</h1>
+          <p>Gerencie o conteúdo da página inicial.</p>
+        </div>
+
+        <!-- TABS -->
+        <ul class="nav nav-tabs">
+          <li class="nav-item"><a class="nav-link active" data-tab="main" onclick="switchTab(this,'home','main'); carregarMainUnico(1,'home-main')">Home Main</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="carousel" onclick="switchTab(this,'home','carousel'); carregarCarousel()">Carousel</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="info" onclick="switchTab(this,'home','info'); carregarHomeInfo()">Info</a></li>
+        </ul>
+        <div class="tab-content">
+
+          <div id="home-tab-main" class="tab-pane active">
+            <div class="admin-card">
+              <h2><i class="bi bi-pin-map-fill"></i> Home Main <span class="badge-table ms-2">main · id_main = 1</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Banner de topo da Home — registro único, não uma lista.
+              </p>
+              <form onsubmit="salvarMainUnico(event, 1, 'home-main')">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" id="home-main-titulo" placeholder="Título principal" required>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Subtítulo</label>
+                    <input type="text" class="form-control" id="home-main-subtitulo" placeholder="Subtítulo">
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Salvar</button>
+                  <button type="button" class="btn btn-dourado" onclick="carregarMainUnico(1, 'home-main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Desfazer alterações</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div id="home-tab-carousel" class="tab-pane">
+            <div class="admin-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-images"></i> Home Carousel <span class="badge-table ms-2">home_carousel</span></h2>
+                <!-- <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioCarousel()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button> -->
+              </div>
+              <form onsubmit="handleCarouselSubmit(event)" id="form-home-carousel">
+                <input type="hidden" id="carousel-id" value="">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Título do slide</label>
+                    <input type="text" class="form-control" id="carousel-titulo" placeholder="Título do slide" required>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Imagem de fundo</label>
+
+                    <input
+                        type="file"
+                        class="form-control"
+                        id="carousel-file"
+                        accept="image/*">
+
+                    <input
+                        type="text"
+                        class="form-control mt-2"
+                        id="carousel-background"
+                        placeholder="img/1.jpg"
+                        readonly
+                        required>
+
+                    <img
+                        id="carousel-preview"
+                        src=""
+                        style="
+                            display:none;
+                            max-width:100%;
+                            max-height:200px;
+                            margin-top:10px;
+                            border-radius:8px;
+                            border:1px solid #ddd;
+                        ">
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label">Descrição</label>
+                    <textarea class="form-control" id="carousel-descricao" placeholder="Descrição do slide..."></textarea>
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo" id="carousel-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarCarouselAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioCarousel()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                </div>
+              </form>
+            </div>
+            <div class="admin-card">
+              <h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">home_carousel</span></h2>
+              <div class="table-responsive"><table class="table table-bordered table-hover">
+                <thead><tr><th>#</th><th>Título</th><th>Descrição</th><th>Background</th><th>Ações</th></tr></thead>
+                <tbody id="tb-home_carousel"><tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
+              </table></div>
+            </div>
+          </div>
+
+          <div id="home-tab-info" class="tab-pane">
+            <div class="admin-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-info-circle-fill"></i> Home Info <span class="badge-table ms-2">home_info</span></h2>
+                <!-- <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioHomeInfo()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button> -->
+              </div>
+              <form onsubmit="handleHomeInfoSubmit(event)" id="form-home-info">
+                <input type="hidden" id="home-info-id" value="">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Imagem</label>
+
+                    <input
+                        type="file"
+                        class="form-control"
+                        id="home-info-file"
+                        accept="image/*">
+
+                    <input
+                        type="text"
+                        class="form-control mt-2"
+                        id="home-info-imagem"
+                        placeholder="img/home/home2.jpg"
+                        readonly>
+
+                    <img
+                        id="home-info-preview"
+                        src=""
+                        style="
+                            display:none;
+                            max-width:100%;
+                            max-height:200px;
+                            margin-top:10px;
+                            border-radius:8px;
+                            border:1px solid #ddd;
+                        ">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Texto</label>
+                    <textarea class="form-control" id="home-info-texto" placeholder="Texto informativo..." required></textarea>
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo" id="home-info-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarHomeInfoAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioHomeInfo()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                </div>
+              </form>
+            </div>
+            <div class="admin-card">
+              <h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">home_info</span></h2>
+              <div class="table-responsive"><table class="table table-bordered table-hover">
+                <thead><tr><th>#</th><th>Texto</th><th>Imagem</th><th>Ações</th></tr></thead>
+                <tbody id="tb-home_info"><tr><td colspan="4" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
+              </table></div>
+            </div>
+          </div>
+
+        </div><!-- /tab-content home -->
+      </div><!-- /page-home -->
+
+      <!-- ==================== SOBRE ==================== -->
+      <div id="page-sobre" class="page">
+        <div class="page-title mb-4" style="border-radius:10px">
+          <h1><i class="bi bi-person-fill me-2"></i>Sobre</h1>
+          <p>Gerencie o conteúdo da página Sobre.</p>
+        </div>
+        <ul class="nav nav-tabs">
+          <li class="nav-item"><a class="nav-link active" data-tab="main" onclick="switchTab(this,'sobre','main'); carregarMainUnico(4,'sobre-main')">Sobre Main</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="historia" onclick="switchTab(this,'sobre','historia'); carregarHistoria()">História</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="principios" onclick="switchTab(this,'sobre','principios'); carregarPrincipios()">Princípios</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="equipe" onclick="switchTab(this,'sobre','equipe'); carregarEquipe()">Equipe</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="diferenciais" onclick="switchTab(this,'sobre','diferenciais'); carregarDiferenciais()">Diferenciais</a></li>
+        </ul>
+        <div class="tab-content">
+
+          <div id="sobre-tab-main" class="tab-pane active">
+            <div class="admin-card">
+              <h2><i class="bi bi-pin-map-fill"></i> Sobre Main <span class="badge-table ms-2">main · id_main = 4</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Banner de topo da página Sobre — registro único, não uma lista.
+              </p>
+              <form onsubmit="salvarMainUnico(event, 4, 'sobre-main')">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" id="sobre-main-titulo" placeholder="Título" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Subtítulo</label>
+                    <input type="text" class="form-control" id="sobre-main-subtitulo" placeholder="Subtítulo">
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Salvar</button>
+                  <button type="button" class="btn btn-dourado" onclick="carregarMainUnico(4, 'sobre-main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Desfazer alterações</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div id="sobre-tab-historia" class="tab-pane">
+            <div class="admin-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-book-fill"></i> História <span class="badge-table ms-2">about_history</span></h2>
+                <!-- <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioHistoria()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button> -->
+              </div>
+              <form onsubmit="handleHistoriaSubmit(event)" id="form-historia">
+                <input type="hidden" id="historia-id" value="">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" id="historia-titulo" placeholder="Título" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Imagem</label>
+
+                    <input
+                        type="file"
+                        class="form-control"
+                        id="historia-file"
+                        accept="image/*">
+
+                    <input
+                        type="text"
+                        class="form-control mt-2"
+                        id="historia-imagem"
+                        placeholder="img/2024-04-16.jpg"
+                        readonly>
+
+                    <img
+                        id="historia-preview"
+                        src=""
+                        style="
+                            display:none;
+                            max-width:100%;
+                            max-height:200px;
+                            margin-top:10px;
+                            border-radius:8px;
+                            border:1px solid #ddd;
+                        ">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Texto</label>
+                    <textarea class="form-control" id="historia-texto" rows="4" placeholder="Texto..." required></textarea>
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo" id="historia-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarHistoriaAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioHistoria()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                </div>
+              </form>
+            </div>
+            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">about_history</span></h2>
+              <div class="table-responsive"><table class="table table-bordered table-hover">
+                <thead><tr><th>#</th><th>Título</th><th>Texto</th><th>Imagem</th><th>Ações</th></tr></thead>
+                <tbody id="tb-historia"><tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
+              </table></div>
+            </div>
+          </div>
+
+          <div id="sobre-tab-principios" class="tab-pane">
+            <div class="admin-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-check-circle-fill"></i> Princípios <span class="badge-table ms-2">about_principles</span></h2>
+                <!-- <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioPrincipio()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button> -->
+              </div>
+              <form onsubmit="handlePrincipioSubmit(event)" id="form-principios">
+                <input type="hidden" id="principio-id" value="">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" id="principio-titulo" placeholder="Ex: Missão" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Ícone (classe Bootstrap Icons)</label>
+                    <input type="text" class="form-control" id="principio-icone" placeholder="bi bi-bullseye">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Texto</label>
+                    <textarea class="form-control" id="principio-texto" placeholder="Descrição..." required></textarea>
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo" id="principio-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarPrincipioAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioPrincipio()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                </div>
+              </form>
+            </div>
+            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">about_principles</span></h2>
+              <div class="table-responsive"><table class="table table-bordered table-hover">
+                <thead><tr><th>#</th><th>Título</th><th>Texto</th><th>Ícone</th><th>Ações</th></tr></thead>
+                <tbody id="tb-principios"><tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
+              </table></div>
+            </div>
+          </div>
+
+          <div id="sobre-tab-equipe" class="tab-pane">
+            <div class="admin-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-people-fill"></i> Equipe <span class="badge-table ms-2">about_team</span></h2>
+                <!-- <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioEquipe()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button> -->
+              </div>
+              <form onsubmit="handleEquipeSubmit(event)" id="form-equipe">
+                <input type="hidden" id="equipe-id" value="">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Especialista (nome)</label>
+                    <input type="text" class="form-control" id="equipe-especialista" placeholder="Nome" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Universidade / Especialidade</label>
+                    <input type="text" class="form-control" id="equipe-universidade" placeholder="Universidade">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Formação</label>
+                    <input type="text" class="form-control" id="equipe-formacao" placeholder="Ex: Pós-graduada em...">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Foto</label>
+
+                    <input
+                        type="file"
+                        class="form-control"
+                        id="equipe-file"
+                        accept="image/*">
+
+                    <input
+                        type="text"
+                        class="form-control mt-2"
+                        id="equipe-imagem"
+                        placeholder="bi bi-person-circle (ou faça upload de uma foto acima)">
+
+                    <img
+                        id="equipe-preview"
+                        src=""
+                        style="
+                            display:none;
+                            max-width:100%;
+                            max-height:200px;
+                            margin-top:10px;
+                            border-radius:8px;
+                            border:1px solid #ddd;
+                        ">
+                    <small class="text-muted">Faça upload de uma foto, ou deixe em branco / digite uma classe de ícone (ex: <code>bi bi-person-circle</code>) pra usar um avatar padrão.</small>
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo" id="equipe-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarEquipeAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioEquipe()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                </div>
+              </form>
+            </div>
+            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">about_team</span></h2>
+              <div class="table-responsive"><table class="table table-bordered table-hover">
+                <thead><tr><th>#</th><th>Especialista</th><th>Universidade</th><th>Formação</th><th>Imagem</th><th>Ações</th></tr></thead>
+                <tbody id="tb-equipe"><tr><td colspan="6" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
+              </table></div>
+            </div>
+          </div>
+
+          <div id="sobre-tab-diferenciais" class="tab-pane">
+            <div class="admin-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-star-fill"></i> Diferenciais <span class="badge-table ms-2">about_differentials</span></h2>
+                <!-- <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioDiferencial()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button> -->
+              </div>
+              <form onsubmit="handleDiferencialSubmit(event)" id="form-diferenciais">
+                <input type="hidden" id="diferencial-id" value="">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <label class="form-label">Descrição</label>
+                    <textarea class="form-control" id="diferencial-descricao" rows="3" placeholder="Descrição do diferencial..." required></textarea>
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo" id="diferencial-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarDiferencialAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioDiferencial()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                </div>
+              </form>
+            </div>
+            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">about_differentials</span></h2>
+              <div class="table-responsive"><table class="table table-bordered table-hover">
+                <thead><tr><th>#</th><th>Descrição</th><th>Ações</th></tr></thead>
+                <tbody id="tb-diferenciais"><tr><td colspan="3" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
+              </table></div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /page-sobre -->
+
+      <!-- ==================== CATÁLOGO ==================== -->
+      <div id="page-catalogo" class="page">
+        <div class="page-title mb-4" style="border-radius:10px">
+          <h1><i class="bi bi-grid-fill me-2"></i>Catálogo</h1>
+          <p>Gerencie o conteúdo da página de catálogo.</p>
+        </div>
+        <ul class="nav nav-tabs">
+          <li class="nav-item"><a class="nav-link active" data-tab="main" onclick="switchTab(this,'catalogo','main'); carregarMainUnico(2,'catalogo-main')">Catálogo Main</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="item" onclick="switchTab(this,'catalogo','item'); carregarItens()">Itens</a></li>
+          <!-- <li class="nav-item"><a class="nav-link" data-tab="item" onclick="switchTab(this,'catalogo','item')">Itens</a></li> -->
+        </ul>
+        <div class="tab-content">
+
+          <div id="catalogo-tab-main" class="tab-pane active">
+            <div class="admin-card">
+              <h2><i class="bi bi-pin-map-fill"></i> Catálogo Main <span class="badge-table ms-2">main · id_main = 2</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Este é o banner de topo da página Catálogo — existe só um registro pra essa página, não uma lista.
+              </p>
+              <form onsubmit="salvarMainUnico(event, 2, 'catalogo-main')">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" id="catalogo-main-titulo" placeholder="Título" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Subtítulo</label>
+                    <input type="text" class="form-control" id="catalogo-main-subtitulo" placeholder="Subtítulo">
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Salvar</button>
+                  <button type="button" class="btn btn-dourado" onclick="carregarMainUnico(2, 'catalogo-main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Desfazer alterações</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div id="catalogo-tab-item" class="tab-pane">
+            <div class="admin-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-card-list"></i> Itens do Catálogo <span class="badge-table ms-2">item_catalogo</span></h2>
+                <!-- <button type="button" class="btn btn-sm btn-roxo" onclick="limparFormularioItem()">
+                  <i class="bi bi-plus-lg me-1"></i>Novo Registro
+                </button> -->
+              </div>
+              <form onsubmit="handleItemSubmit(event)" id="form-item-catalogo">
+                <input type="hidden" id="item-id" value="">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">item_catalogo_titulo</label>
+                    <input type="text" class="form-control" id="item-titulo" placeholder="Nome do produto/serviço" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">item_catalogo_descricao_curta</label>
+                    <input type="text" class="form-control" id="item-desc-curta" placeholder="Descrição curta (card)" required>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">item_catalogo_descricao_modal</label>
+                    <textarea class="form-control" id="item-desc-modal" rows="4" placeholder="Descrição completa (modal)..."></textarea>
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo" id="item-form-btn"><i class="bi bi-floppy-fill me-1"></i>Inserir</button>
+                  <button type="button" class="btn btn-danger" onclick="deletarItemAtual()"><i class="bi bi-trash me-1"></i>Deletar</button>
+                  <button type="button" class="btn btn-dourado" onclick="limparFormularioItem()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+                </div>
+              </form>
+            </div>
+            <div class="admin-card"><h2><i class="bi bi-table"></i> Registros <span class="badge-table ms-2">item_catalogo</span></h2>
+              <div class="table-responsive"><table class="table table-bordered table-hover">
+                <thead><tr><th>#</th><th>Título</th><th>Desc. Curta</th><th>Desc. Modal</th><th>Ações</th></tr></thead>
+                <tbody id="tb-item_catalogo"><tr><td colspan="5" class="text-center text-muted py-3">Nenhum registro</td></tr></tbody>
+              </table></div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /page-catalogo -->
+
+      <!-- ==================== CONTATO ==================== -->
+      <div id="page-contato" class="page">
+        <div class="page-title mb-4" style="border-radius:10px">
+          <h1><i class="bi bi-envelope-fill me-2"></i>Contato</h1>
+          <p>Gerencie o conteúdo da página de contato.</p>
+        </div>
+        <ul class="nav nav-tabs">
+          <li class="nav-item"><a class="nav-link active" data-tab="main" onclick="switchTab(this,'contato','main'); carregarMainUnico(3,'contato-main')">Contato Main</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="mensagem" onclick="switchTab(this,'contato','mensagem'); carregarMensagens()">Mensagens</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="localizacao" onclick="switchTab(this,'contato','localizacao'); carregarLocalizacao()">Localização</a></li>
+          <li class="nav-item"><a class="nav-link" data-tab="info" onclick="switchTab(this,'contato','info'); carregarContatoInfo()">Info Contato</a></li>
+        </ul>
+        <div class="tab-content">
+
+          <div id="contato-tab-main" class="tab-pane active">
+            <div class="admin-card">
+              <h2><i class="bi bi-pin-map-fill"></i> Contato Main <span class="badge-table ms-2">main · id_main = 3</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Banner de topo da página Contato — registro único, não uma lista.
+              </p>
+              <form onsubmit="salvarMainUnico(event, 3, 'contato-main')">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-control" id="contato-main-titulo" placeholder="Título" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Subtítulo</label>
+                    <input type="text" class="form-control" id="contato-main-subtitulo" placeholder="Subtítulo">
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Salvar</button>
+                  <button type="button" class="btn btn-dourado" onclick="carregarMainUnico(3, 'contato-main')"><i class="bi bi-arrow-counterclockwise me-1"></i>Desfazer alterações</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div id="contato-tab-mensagem" class="tab-pane">
+            <div class="admin-card">
+              <h2><i class="bi bi-chat-fill"></i> Mensagens recebidas <span class="badge-table ms-2">contact_message</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Registros criados automaticamente pelo formulário de contato do site — não há inserção manual aqui, só visualização e exclusão.
+              </p>
+              <div class="table-responsive"><table class="table table-bordered table-hover">
+                <thead><tr><th>Recebido em</th><th>Nome</th><th>Email</th><th>Mensagem</th><th>Ações</th></tr></thead>
+                <tbody id="tb-mensagem"><tr><td colspan="5" class="text-center text-muted py-3">Nenhuma mensagem recebida ainda</td></tr></tbody>
+              </table></div>
+            </div>
+          </div>
+
+          <div id="contato-tab-localizacao" class="tab-pane">
+            <div class="admin-card">
+              <h2><i class="bi bi-geo-alt-fill"></i> Localização <span class="badge-table ms-2">contact_location</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Mapa e endereço exibidos na página Contato — registro único, não uma lista.
+              </p>
+              <form onsubmit="salvarLocalizacao(event)" id="form-localizacao">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <label class="form-label">Google Maps — cole o código de embed</label>
+                    <textarea class="form-control" id="localizacao-maps" rows="3"
+                      placeholder='Cole aqui o &lt;iframe src="https://www.google.com/maps/embed?..."&gt; que o Google Maps te dá em Compartilhar → Incorporar um mapa, ou só a URL diretamente.'></textarea>
+                    <div class="invalid-feedback-custom" id="localizacao-maps-erro"></div>
+                    <small class="text-muted">
+                      No Google Maps: clique em <strong>Compartilhar</strong> → aba <strong>Incorporar um mapa</strong> → <strong>Copiar HTML</strong>, e cole aqui. Extraio a URL automaticamente.
+                    </small>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Endereço — linha 1 (prédio / sala)</label>
+                    <input type="text" class="form-control" id="localizacao-linha1" placeholder="Ed. Jurerê internacional, 4º andar, sala 406" required>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Endereço — linha 2 (rua / número)</label>
+                    <input type="text" class="form-control" id="localizacao-linha2" placeholder="Rua Álvares Machado, 281" required>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Endereço — linha 3 (bairro, cidade - UF, CEP)</label>
+                    <input type="text" class="form-control" id="localizacao-linha3" placeholder="Vila Bocaina, Mauá - SP, 09310-020" required>
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Salvar</button>
+                  <button type="button" class="btn btn-dourado" onclick="carregarLocalizacao()"><i class="bi bi-arrow-counterclockwise me-1"></i>Desfazer alterações</button>
+                </div>
+              </form>
+            </div>
+            <div class="admin-card">
+              <h2><i class="bi bi-eye-fill"></i> Pré-visualização do mapa</h2>
+              <div id="localizacao-preview" class="text-muted" style="font-size:14px">Nenhum mapa configurado ainda.</div>
+            </div>
+          </div>
+
+          <div id="contato-tab-info" class="tab-pane">
+            <div class="admin-card">
+              <h2><i class="bi bi-telephone-fill"></i> Info Contato <span class="badge-table ms-2">contact_info</span></h2>
+              <p class="text-muted" style="margin-top:-8px;font-size:13px">
+                Telefone, WhatsApp e horário de atendimento exibidos na página Contato — registro único, não uma lista.
+              </p>
+              <form onsubmit="salvarContatoInfo(event)" id="form-contato-info">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Telefone</label>
+                    <input type="tel" class="form-control" id="contato-info-telefone"
+                      placeholder="(11) 4515-0556" maxlength="15"
+                      oninput="mascararTelefone(this)">
+                    <div class="invalid-feedback-custom" id="contato-info-telefone-erro"></div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">WhatsApp</label>
+                    <input type="tel" class="form-control" id="contato-info-whatsapp"
+                      placeholder="(11) 97199-3704" maxlength="15" required
+                      oninput="mascararTelefone(this)">
+                    <div class="invalid-feedback-custom" id="contato-info-whatsapp-erro"></div>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Horário de atendimento</label>
+                    <textarea class="form-control" id="contato-info-atendimento" placeholder="Ex: Seg a Sex das 9h às 18h" required></textarea>
+                  </div>
+                </div>
+                <div class="btn-row">
+                  <button type="submit" class="btn btn-roxo"><i class="bi bi-floppy-fill me-1"></i>Salvar</button>
+                  <button type="button" class="btn btn-dourado" onclick="carregarContatoInfo()"><i class="bi bi-arrow-counterclockwise me-1"></i>Desfazer alterações</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /page-contato -->
+
+      <!-- ==================== ADMINISTRADORES ==================== -->
+      <div id="page-admins" class="page">
+        <div class="page-title mb-4" style="border-radius:10px">
+          <h1><i class="bi bi-shield-lock-fill me-2"></i>Administradores</h1>
+          <p>Gerencie os usuários com acesso ao painel. Apenas Super Admins podem criar, editar e excluir.</p>
+        </div>
+
+        <!-- STATS -->
+        <div class="row g-3 mb-4" id="admin-stats"></div>
+
+        <!-- FORM -->
+        <div class="admin-card" id="card-novo-admin">
+          <h2><i class="bi bi-person-plus-fill"></i> Novo Administrador</h2>
+          <form onsubmit="handleAdminSubmit(event)">
+            <input type="hidden" id="admin-form-id" value="">
+            <div class="row g-3">
+              <div class="col-md-6"><label class="form-label">Nome Completo</label><input type="text" class="form-control" id="af-nome" placeholder="Ex: Dra. Nátali Menezes" required></div>
+              <div class="col-md-6">
+                <label class="form-label">E-mail</label>
+                <input type="email" class="form-control" id="af-email" placeholder="natali@studio.com" required>
+                <small class="text-muted" id="af-email-hint" style="display:none">🔒 Fixo após o cadastro — só é alterável direto no banco de dados.</small>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Usuário (login)</label>
+                <input type="text" class="form-control" id="af-usuario" placeholder="natali.menezes" required>
+                <small class="text-muted" id="af-usuario-hint" style="display:none">🔒 Fixo após o cadastro.</small>
+              </div>
+              <div class="col-md-4"><label class="form-label">Telefone</label><input type="tel" class="form-control" id="af-telefone" placeholder="(11) 98888-7777" maxlength="15" oninput="mascararTelefone(this)" required></div>
+              <div class="col-md-4"><label class="form-label">Perfil de Acesso</label>
+                <select class="form-select" id="af-perfil">
+                  <option value="1">🟣 Root / Super Admin</option>
+                  <option value="2" selected>🔵 Admin</option>
+                  <option value="3">🟢 Secretária</option>
+                </select>
+              </div>
+              <div class="col-md-6"><label class="form-label">Status</label>
+                <select class="form-select" id="af-status">
+                  <option value="1">✅ Ativo</option>
+                  <option value="0">🚫 Inativo</option>
+                </select>
+              </div>
+              <div class="col-md-6"></div>
+              <div class="col-md-6">
+                <label class="form-label">Senha</label>
+                <div class="input-group">
+                  <input type="password" class="form-control" id="af-senha" placeholder="Mínimo 6 caracteres" oninput="checkStrength(this)">
+                  <button class="btn btn-outline-secondary" type="button" onclick="togglePw('af-senha',this)"><i class="bi bi-eye"></i></button>
+                </div>
+                <div class="pw-bar" id="pw-bar"><span></span><span></span><span></span><span></span></div>
+                <div class="pw-hint" id="pw-hint"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Confirmar Senha</label>
+                <div class="input-group">
+                  <input type="password" class="form-control" id="af-senha2" placeholder="Repita a senha">
+                  <button class="btn btn-outline-secondary" type="button" onclick="togglePw('af-senha2',this)"><i class="bi bi-eye"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button type="submit" class="btn btn-roxo" id="admin-form-btn"><i class="bi bi-person-plus-fill me-1"></i>Cadastrar Administrador</button>
+              <button type="button" class="btn btn-dourado" onclick="resetAdminForm()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpar</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- ADMINISTRADORES CADASTRADOS -->
+        <div class="admin-card">
+          <h2><i class="bi bi-people-fill"></i> Administradores Cadastrados</h2>
+          <div class="row g-2 mb-3">
+            <div class="col-md-5"><input type="text" class="form-control" id="admin-search" placeholder="🔍 Buscar nome, e-mail ou usuário..." oninput="renderAdmins()"></div>
+            <div class="col-md-3">
+              <select class="form-select" id="admin-filter-perfil" onchange="renderAdmins()">
+                <option value="">Todos os perfis</option>
+                <option value="1">Root / Super Admin</option>
+                <option value="2">Admin</option>
+                <option value="3">Secretária</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select class="form-select" id="admin-filter-status" onchange="renderAdmins()">
+                <option value="">Todos os status</option>
+                <option value="1">Ativo</option>
+                <option value="0">Inativo</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive"><table class="table table-bordered table-hover">
+            <thead><tr><th>#</th><th>Nome</th><th>Usuário</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Criado em</th><th>Ações</th></tr></thead>
+            <tbody id="tb-admins"></tbody>
+          </table></div>
+        </div>
+      </div><!-- /page-admins -->
+
+    </div><!-- /main-content -->
+  </div><!-- /panel-layout -->
+
+  <div class="footer">Desenvolvido por Grupo 5</div>
