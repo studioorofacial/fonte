@@ -30,7 +30,7 @@
 body { font-family: Arial, Helvetica, sans-serif; background-color: var(--fundo); color: var(--text); overflow-x: hidden; }
 
 /* ============================================================
-   HEADER  — idêntico ao site original
+   HEADER
 ============================================================ */
 .header {
   display: flex;
