@@ -1,0 +1,1908 @@
+openapi: 3.0.3
+info:
+  title: Backend API
+  version: 1.0.0
+  description: Documentação da API REST do backend (Express + MySQL). Gerencia conteúdo de um site institucional
+    (carousel, equipe, história, diferenciais, itens, localização, informações de contato) e um painel
+    administrativo com autenticação por access/refresh token.
+servers:
+- url: http://localhost:8080/api
+  description: Servidor local de desenvolvimento
+tags:
+- name: Auth
+  description: Login, refresh e logout
+- name: Users
+  description: Gestão de usuários do painel administrativo
+- name: Roles
+  description: Cargos de acesso (Root, Admin, Secretaria)
+- name: Panel
+  description: Painel administrativo
+- name: Carousel
+  description: Banners do carrossel da home
+- name: Differentials
+  description: Diferenciais exibidos no site
+- name: History
+  description: Seção de história/sobre
+- name: HomeInfo
+  description: Informações de destaque da home
+- name: Info
+  description: Informações de contato (telefone/whatsapp)
+- name: Item
+  description: Catálogo de itens/serviços
+- name: Location
+  description: Endereço e localização
+- name: Main
+  description: Banners principais por página
+- name: Message
+  description: Mensagens do formulário de contato
+- name: Principles
+  description: Princípios/valores da empresa
+- name: Team
+  description: Membros da equipe
+paths:
+  /admin-panel:
+    get:
+      tags:
+      - Panel
+      summary: Retorna o HTML do painel administrativo
+      description: Requer autenticação. Serve o arquivo estático admin-panel.html, que não é acessível
+        por nenhum outro meio.
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: HTML do painel
+          content:
+            text/html:
+              schema:
+                type: string
+        '401': &id001
+          description: Erro
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500': *id001
+  /auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Login
+      description: Autentica com email OU login (usuário) + senha. Retorna access token e define cookie
+        httpOnly de refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  user:
+                    type: object
+                    properties:
+                      id_user:
+                        type: integer
+                      name:
+                        type: string
+                      email:
+                        type: string
+                      role_id:
+                        type: integer
+        '400': *id001
+        '401': *id001
+        '500': *id001
+  /auth/logout:
+    post:
+      tags:
+      - Auth
+      summary: Logout
+      description: Invalida o refresh token atual e limpa o cookie.
+      responses:
+        '200':
+          description: Logout realizado com sucesso
+        '500': *id001
+  /auth/refresh:
+    post:
+      tags:
+      - Auth
+      summary: Renova o access token
+      description: Usa o cookie httpOnly assinado 'refreshToken' (enviado automaticamente pelo navegador)
+        para gerar um novo access token.
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: Novo token gerado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+        '401': *id001
+        '403': *id001
+  /carousel:
+    get:
+      tags:
+      - Carousel
+      summary: Lista todos os registros de Carousel
+      security: &id002 []
+      responses:
+        '200':
+          description: Lista de registros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Carousel'
+        '500': *id001
+    post:
+      tags:
+      - Carousel
+      summary: Cria um novo registro de Carousel
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CarouselInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '500': *id001
+  /carousel/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do registro
+    get:
+      tags:
+      - Carousel
+      summary: Busca um registro de Carousel pelo ID
+      security: *id002
+      responses:
+        '200':
+          description: Registro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Carousel'
+        '404': *id001
+        '500': *id001
+    put:
+      tags:
+      - Carousel
+      summary: Atualiza um registro de Carousel
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CarouselInput'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - Carousel
+      summary: Remove um registro de Carousel
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+  /differentials:
+    get:
+      tags:
+      - Differentials
+      summary: Lista todos os registros de Differentials
+      security: &id003 []
+      responses:
+        '200':
+          description: Lista de registros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Differential'
+        '500': *id001
+    post:
+      tags:
+      - Differentials
+      summary: Cria um novo registro de Differentials
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DifferentialInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '500': *id001
+  /differentials/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do registro
+    get:
+      tags:
+      - Differentials
+      summary: Busca um registro de Differentials pelo ID
+      security: *id003
+      responses:
+        '200':
+          description: Registro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Differential'
+        '404': *id001
+        '500': *id001
+    put:
+      tags:
+      - Differentials
+      summary: Atualiza um registro de Differentials
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DifferentialInput'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - Differentials
+      summary: Remove um registro de Differentials
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+  /history:
+    get:
+      tags:
+      - History
+      summary: Lista todos os registros de History
+      security: &id004 []
+      responses:
+        '200':
+          description: Lista de registros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/History'
+        '500': *id001
+    post:
+      tags:
+      - History
+      summary: Cria um novo registro de History
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HistoryInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '500': *id001
+  /history/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do registro
+    get:
+      tags:
+      - History
+      summary: Busca um registro de History pelo ID
+      security: *id004
+      responses:
+        '200':
+          description: Registro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+        '404': *id001
+        '500': *id001
+    put:
+      tags:
+      - History
+      summary: Atualiza um registro de History
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HistoryInput'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - History
+      summary: Remove um registro de History
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+  /home-info:
+    get:
+      tags:
+      - HomeInfo
+      summary: Lista todos os registros de HomeInfo
+      security: &id005 []
+      responses:
+        '200':
+          description: Lista de registros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HomeInfo'
+        '500': *id001
+    post:
+      tags:
+      - HomeInfo
+      summary: Cria um novo registro de HomeInfo
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HomeInfoInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '500': *id001
+  /home-info/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do registro
+    get:
+      tags:
+      - HomeInfo
+      summary: Busca um registro de HomeInfo pelo ID
+      security: *id005
+      responses:
+        '200':
+          description: Registro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeInfo'
+        '404': *id001
+        '500': *id001
+    put:
+      tags:
+      - HomeInfo
+      summary: Atualiza um registro de HomeInfo
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HomeInfoInput'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - HomeInfo
+      summary: Remove um registro de HomeInfo
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+  /info:
+    get:
+      tags:
+      - Info
+      summary: Lista todos os registros de Info
+      security: &id006 []
+      responses:
+        '200':
+          description: Lista de registros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Info'
+        '500': *id001
+    post:
+      tags:
+      - Info
+      summary: Cria um novo registro de Info
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InfoInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '500': *id001
+  /info/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do registro
+    get:
+      tags:
+      - Info
+      summary: Busca um registro de Info pelo ID
+      security: *id006
+      responses:
+        '200':
+          description: Registro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Info'
+        '404': *id001
+        '500': *id001
+    put:
+      tags:
+      - Info
+      summary: Atualiza um registro de Info
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InfoInput'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - Info
+      summary: Remove um registro de Info
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+  /item:
+    get:
+      tags:
+      - Item
+      summary: Lista todos os registros de Item
+      security: &id007 []
+      responses:
+        '200':
+          description: Lista de registros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+        '500': *id001
+    post:
+      tags:
+      - Item
+      summary: Cria um novo registro de Item
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '500': *id001
+  /item/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do registro
+    get:
+      tags:
+      - Item
+      summary: Busca um registro de Item pelo ID
+      security: *id007
+      responses:
+        '200':
+          description: Registro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '404': *id001
+        '500': *id001
+    put:
+      tags:
+      - Item
+      summary: Atualiza um registro de Item
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemInput'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - Item
+      summary: Remove um registro de Item
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+  /location:
+    get:
+      tags:
+      - Location
+      summary: Lista todos os registros de Location
+      security: &id008 []
+      responses:
+        '200':
+          description: Lista de registros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Location'
+        '500': *id001
+    post:
+      tags:
+      - Location
+      summary: Cria um novo registro de Location
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '500': *id001
+  /location/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do registro
+    get:
+      tags:
+      - Location
+      summary: Busca um registro de Location pelo ID
+      security: *id008
+      responses:
+        '200':
+          description: Registro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '404': *id001
+        '500': *id001
+    put:
+      tags:
+      - Location
+      summary: Atualiza um registro de Location
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationInput'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - Location
+      summary: Remove um registro de Location
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+  /main:
+    get:
+      tags:
+      - Main
+      summary: Lista todos os registros de Main
+      security: &id009 []
+      responses:
+        '200':
+          description: Lista de registros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Main'
+        '500': *id001
+    post:
+      tags:
+      - Main
+      summary: Cria um novo registro de Main
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MainInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '500': *id001
+  /main/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do registro
+    get:
+      tags:
+      - Main
+      summary: Busca um registro de Main pelo ID
+      security: *id009
+      responses:
+        '200':
+          description: Registro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Main'
+        '404': *id001
+        '500': *id001
+    put:
+      tags:
+      - Main
+      summary: Atualiza um registro de Main
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MainInput'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - Main
+      summary: Remove um registro de Main
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+  /message:
+    get:
+      tags:
+      - Message
+      summary: Lista todas as mensagens de contato
+      description: Requer autenticação (qualquer cargo, inclusive Secretária).
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de mensagens
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+        '401': *id001
+        '500': *id001
+    post:
+      tags:
+      - Message
+      summary: Envia uma nova mensagem de contato
+      description: Rota pública — usada pelo formulário de contato do site. Dispara e-mail de notificação
+        em segundo plano.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '500': *id001
+  /message/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID da mensagem
+    get:
+      tags:
+      - Message
+      summary: Busca uma mensagem pelo ID
+      description: Requer autenticação (qualquer cargo).
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Mensagem encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '401': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - Message
+      summary: Remove uma mensagem
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+  /principles:
+    get:
+      tags:
+      - Principles
+      summary: Lista todos os registros de Principles
+      security: &id010 []
+      responses:
+        '200':
+          description: Lista de registros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Principle'
+        '500': *id001
+    post:
+      tags:
+      - Principles
+      summary: Cria um novo registro de Principles
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrincipleInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '500': *id001
+  /principles/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do registro
+    get:
+      tags:
+      - Principles
+      summary: Busca um registro de Principles pelo ID
+      security: *id010
+      responses:
+        '200':
+          description: Registro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Principle'
+        '404': *id001
+        '500': *id001
+    put:
+      tags:
+      - Principles
+      summary: Atualiza um registro de Principles
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrincipleInput'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - Principles
+      summary: Remove um registro de Principles
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+  /roles:
+    get:
+      tags:
+      - Roles
+      summary: Lista todos os cargos
+      responses:
+        '200':
+          description: Lista de cargos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '500': *id001
+    post:
+      tags:
+      - Roles
+      summary: Cria um novo cargo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '500': *id001
+  /roles/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do cargo
+    get:
+      tags:
+      - Roles
+      summary: Busca um cargo pelo ID
+      responses:
+        '200':
+          description: Cargo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '404': *id001
+        '500': *id001
+    put:
+      tags:
+      - Roles
+      summary: Atualiza um cargo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleInput'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+        '400': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - Roles
+      summary: Remove um cargo
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '404': *id001
+        '500': *id001
+  /team:
+    get:
+      tags:
+      - Team
+      summary: Lista todos os registros de Team
+      security: &id011 []
+      responses:
+        '200':
+          description: Lista de registros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Team'
+        '500': *id001
+    post:
+      tags:
+      - Team
+      summary: Cria um novo registro de Team
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '500': *id001
+  /team/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do registro
+    get:
+      tags:
+      - Team
+      summary: Busca um registro de Team pelo ID
+      security: *id011
+      responses:
+        '200':
+          description: Registro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '404': *id001
+        '500': *id001
+    put:
+      tags:
+      - Team
+      summary: Atualiza um registro de Team
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamInput'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - Team
+      summary: Remove um registro de Team
+      security:
+      - bearerAuth: []
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2).'
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+  /upload-carousel:
+    post:
+      tags:
+      - Carousel
+      summary: Upload de imagem para Carousel
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2). Envia multipart/form-data
+        com o campo ''imagem'' (máx. 5MB, apenas imagens).'
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                imagem:
+                  type: string
+                  format: binary
+              required:
+              - imagem
+      responses:
+        '200':
+          description: Upload realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  path:
+                    type: string
+                    example: img/1699999999999-foto.jpg
+        '400': *id001
+        '401': *id001
+        '403': *id001
+  /upload-history:
+    post:
+      tags:
+      - History
+      summary: Upload de imagem para History
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2). Envia multipart/form-data
+        com o campo ''imagem'' (máx. 5MB, apenas imagens).'
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                imagem:
+                  type: string
+                  format: binary
+              required:
+              - imagem
+      responses:
+        '200':
+          description: Upload realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  path:
+                    type: string
+                    example: img/1699999999999-foto.jpg
+        '400': *id001
+        '401': *id001
+        '403': *id001
+  /upload-home-info:
+    post:
+      tags:
+      - HomeInfo
+      summary: Upload de imagem para HomeInfo
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2). Envia multipart/form-data
+        com o campo ''imagem'' (máx. 5MB, apenas imagens).'
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                imagem:
+                  type: string
+                  format: binary
+              required:
+              - imagem
+      responses:
+        '200':
+          description: Upload realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  path:
+                    type: string
+                    example: img/1699999999999-foto.jpg
+        '400': *id001
+        '401': *id001
+        '403': *id001
+  /upload-team:
+    post:
+      tags:
+      - Team
+      summary: Upload de imagem para Team
+      description: 'Requer autenticação. Permitido para: Root (1) e Admin (2). Envia multipart/form-data
+        com o campo ''imagem'' (máx. 5MB, apenas imagens).'
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                imagem:
+                  type: string
+                  format: binary
+              required:
+              - imagem
+      responses:
+        '200':
+          description: Upload realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  path:
+                    type: string
+                    example: img/1699999999999-foto.jpg
+        '400': *id001
+        '401': *id001
+        '403': *id001
+  /users:
+    get:
+      tags:
+      - Users
+      summary: Lista todos os usuários (sem senha)
+      description: Requer autenticação.
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de usuários
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401': *id001
+        '500': *id001
+    post:
+      tags:
+      - Users
+      summary: Cria um novo usuário administrador
+      description: Requer autenticação. Permitido apenas para Root (1). A senha é criptografada com bcrypt
+        antes de salvar.
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '201':
+          description: Criado com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '409': *id001
+        '500': *id001
+  /users/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: ID do usuário
+    get:
+      tags:
+      - Users
+      summary: Busca um usuário pelo ID (sem senha)
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Usuário encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401': *id001
+        '404': *id001
+        '500': *id001
+    put:
+      tags:
+      - Users
+      summary: Atualiza dados cadastrais do usuário (não altera senha)
+      description: 'Requer autenticação. Permitido para Root (1) e Admin (2), com várias regras de negócio:
+        só Root edita outro Root; usuário master é intocável; ninguém promove a Root exceto outro Root.'
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateInput'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+    delete:
+      tags:
+      - Users
+      summary: Remove um usuário
+      description: Requer autenticação. Permitido para Root (1) e Admin (2). O usuário master nunca pode
+        ser excluído; ninguém exclui a própria conta; só Root exclui outro Root.
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Excluído com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+  /users/{id}/senha:
+    put:
+      tags:
+      - Users
+      summary: Troca a senha de um usuário
+      description: Requer autenticação. Permitido para Root (1) e Admin (2). Só uma conta Root pode trocar
+        a senha de outra conta Root.
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: ID do usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - password
+              properties:
+                password:
+                  type: string
+                  minLength: 6
+      responses:
+        '200':
+          description: Senha atualizada com sucesso
+        '400': *id001
+        '401': *id001
+        '403': *id001
+        '404': *id001
+        '500': *id001
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Access token JWT enviado no header ''Authorization: Bearer <token>'''
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: refreshToken
+      description: Cookie httpOnly assinado, definido automaticamente no login (válido por 7 dias)
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+    Carousel:
+      type: object
+      properties:
+        id_carousel:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        background_image:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    CarouselInput:
+      type: object
+      required:
+      - title
+      - description
+      - id_user
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        background_image:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    Differential:
+      type: object
+      properties:
+        id_differential:
+          type: integer
+        description:
+          type: string
+        id_user:
+          type: integer
+    DifferentialInput:
+      type: object
+      required:
+      - description
+      - id_user
+      properties:
+        description:
+          type: string
+        id_user:
+          type: integer
+    History:
+      type: object
+      properties:
+        id_history:
+          type: integer
+        title:
+          type: string
+        text:
+          type: string
+        image:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    HistoryInput:
+      type: object
+      required:
+      - title
+      - text
+      - id_user
+      properties:
+        title:
+          type: string
+        text:
+          type: string
+        image:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    HomeInfo:
+      type: object
+      properties:
+        id_info:
+          type: integer
+        text:
+          type: string
+        image:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    HomeInfoInput:
+      type: object
+      required:
+      - text
+      - id_user
+      properties:
+        text:
+          type: string
+        image:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    Info:
+      type: object
+      properties:
+        id_info:
+          type: integer
+        service_text:
+          type: string
+        whatsapp:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    InfoInput:
+      type: object
+      required:
+      - service_text
+      - id_user
+      properties:
+        service_text:
+          type: string
+        whatsapp:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    Item:
+      type: object
+      properties:
+        id_item:
+          type: integer
+        title:
+          type: string
+        short_description:
+          type: string
+        modal_description:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    ItemInput:
+      type: object
+      required:
+      - title
+      - short_description
+      - id_user
+      properties:
+        title:
+          type: string
+        short_description:
+          type: string
+        modal_description:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    Location:
+      type: object
+      properties:
+        id_location:
+          type: integer
+        maps_url:
+          type: string
+          nullable: true
+        address:
+          type: string
+        id_user:
+          type: integer
+    LocationInput:
+      type: object
+      required:
+      - address
+      - id_user
+      properties:
+        maps_url:
+          type: string
+          nullable: true
+        address:
+          type: string
+        id_user:
+          type: integer
+    Main:
+      type: object
+      properties:
+        id_main:
+          type: integer
+        title:
+          type: string
+        subtitle:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    MainInput:
+      type: object
+      required:
+      - title
+      - id_user
+      properties:
+        title:
+          type: string
+        subtitle:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    Message:
+      type: object
+      properties:
+        id_message:
+          type: integer
+        message:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        id_user:
+          type: integer
+          nullable: true
+    MessageInput:
+      type: object
+      required:
+      - message
+      - email
+      - name
+      properties:
+        message:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        id_user:
+          type: integer
+          nullable: true
+    Principle:
+      type: object
+      properties:
+        id_principle:
+          type: integer
+        icon:
+          type: string
+          nullable: true
+        text:
+          type: string
+        title:
+          type: string
+        id_user:
+          type: integer
+    PrincipleInput:
+      type: object
+      required:
+      - text
+      - title
+      - id_user
+      properties:
+        icon:
+          type: string
+          nullable: true
+        text:
+          type: string
+        title:
+          type: string
+        id_user:
+          type: integer
+    Role:
+      type: object
+      properties:
+        id_role:
+          type: integer
+        name_role:
+          type: string
+    RoleInput:
+      type: object
+      required:
+      - name_role
+      properties:
+        name_role:
+          type: string
+    Team:
+      type: object
+      properties:
+        id_team:
+          type: integer
+        specialist:
+          type: string
+        university:
+          type: string
+          nullable: true
+        education:
+          type: string
+          nullable: true
+        image:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    TeamInput:
+      type: object
+      required:
+      - specialist
+      - id_user
+      properties:
+        specialist:
+          type: string
+        university:
+          type: string
+          nullable: true
+        education:
+          type: string
+          nullable: true
+        image:
+          type: string
+          nullable: true
+        id_user:
+          type: integer
+    User:
+      type: object
+      properties:
+        id_user:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        login:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        role_id:
+          type: integer
+          description: 1 = Root, 2 = Admin, 3 = Secretaria
+        status:
+          type: integer
+          description: 1 = ativo, 0 = inativo
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    UserInput:
+      type: object
+      required:
+      - name
+      - email
+      - login
+      - password
+      - phone
+      - role_id
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        login:
+          type: string
+        password:
+          type: string
+          minLength: 6
+        phone:
+          type: string
+        role_id:
+          type: integer
+    UserUpdateInput:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        role_id:
+          type: integer
+        status:
+          type: integer
+    LoginInput:
+      type: object
+      required:
+      - email
+      - password
+      properties:
+        email:
+          type: string
+          description: Aceita tanto o e-mail quanto o login (usuário) cadastrado
+        password:
+          type: string

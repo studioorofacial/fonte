@@ -3,6 +3,11 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const app = express();
+// no topo, junto dos outros requires:
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./src/config/swagger');
+
+
 
 const differentialsRoutes = require('./src/routes/differentialsRoutes');
 const historyRoutes = require('./src/routes/historyRoutes');
@@ -49,6 +54,10 @@ app.get('/', (req, res) => {
     res.json({ message: 'API rodando com sucesso!' });
 });
 
+
+
+// depois da rota GET '/' e ANTES do error handler global:
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Error handler global — impede que erros (ex: JSON malformado no corpo
 // da requisição) derrubem o processo inteiro do Node. Deve ficar sempre
 // por último, depois de todas as rotas.
