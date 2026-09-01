@@ -621,3 +621,7 @@ body.somente-leitura .admin-card form select {
   background: #f3f3f3;
   cursor: not-allowed;
 }
+
+.nav-link {
+  cursor: pointer;
+}
